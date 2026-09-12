@@ -1,0 +1,26 @@
+{
+  "target_count": 200,
+  "total_human_labelled": 11,
+  "remaining_to_target": 189,
+  "target_reached": false,
+  "examples_per_intent": {
+    "BATTERY_POWER": 10,
+    "CONNECTIVITY": 0,
+    "CALLS_COMMUNICATION": 0,
+    "DEVICE_PERFORMANCE": 1,
+    "KEYBOARD_INPUT": 0,
+    "APPS_MEDIA": 0,
+    "DISPLAY_AUDIO_CAMERA": 0,
+    "ACCOUNT_ICLOUD": 0,
+    "PURCHASE_PAYMENT": 0,
+    "HOW_TO_OTHER": 0,
+    "SECURITY": 0
+  },
+  "escalation_counts": {
+    "yes": 0,
+    "no": 11
+  },
+  "skipped_count": 0,
+  "schema_valid": true,
+  "all_human_source": true
+}
