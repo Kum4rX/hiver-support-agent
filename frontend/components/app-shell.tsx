@@ -41,14 +41,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               <FlaskConical className="size-3.5" />
               Evaluation / Demo Environment
             </span>
-            <div className="flex items-center gap-2">
-              <div className="hidden text-right leading-tight lg:block">
-                <div className="text-xs font-medium text-foreground">Balreddy Manoj</div>
-                <div className="text-[11px] text-muted-foreground">ML Engineer</div>
-              </div>
-              <div className="flex size-8 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
-                BM
-              </div>
+            <div className="flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1.5 text-xs font-medium text-foreground">
+              <span className="size-1.5 rounded-full bg-primary" />
+              <span>Hiver AI Support Agent</span>
             </div>
           </div>
         </header>
