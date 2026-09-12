@@ -168,6 +168,10 @@ function EscalationsPage() {
                 <dd className="text-sm text-foreground">{selected.routing_target}</dd>
               </div>
               <div className="flex items-center justify-between gap-4">
+                <dt className="text-xs text-muted-foreground">Source</dt>
+                <dd className="text-xs font-medium text-muted-foreground">{selected.source || "Curated safety/evaluation scenario"}</dd>
+              </div>
+              <div className="flex items-center justify-between gap-4">
                 <dt className="text-xs text-muted-foreground">Status</dt>
                 <dd>
                   <Pill tone={statusTone(selected.status)}>{selected.status.replace("_", " ")}</Pill>

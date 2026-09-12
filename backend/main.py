@@ -341,6 +341,12 @@ async def search_knowledge_base(req: SearchRequest):
     }
 
 
+@app.get("/api/search")
+async def search_knowledge_base_get(query: str = "", k: int = 5):
+    """Semantic vector search across 65,239 pre-filtered historical AppleSupport documents (GET)."""
+    return await search_knowledge_base(SearchRequest(query=query, k=k))
+
+
 @app.get("/api/evaluation")
 async def get_evaluation_metrics():
     """Retrieve measured benchmark metrics from the offline evaluation harness."""

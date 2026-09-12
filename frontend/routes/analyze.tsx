@@ -29,7 +29,6 @@ import {
   type AnalysisResult,
   type PipelineStage,
 } from "@/services/api";
-import { RETRIEVAL_EVAL } from "@/services/demoData";
 
 export const Route = createFileRoute("/analyze")({
   validateSearch: (search: Record<string, unknown>): { q?: string } => {
@@ -69,14 +68,20 @@ function AnalyzePage() {
   const { q } = Route.useSearch();
   const [text, setText] = useState(q ?? "");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<AnalysisResult | null>(null);
 
   const run = useCallback(async (value: string) => {
     if (!value.trim()) return;
     setLoading(true);
     setResult(null);
+    setError(null);
     try {
       setResult(await analyzeCustomerMessage(value.trim()));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Backend unavailable — start FastAPI at http://localhost:8000.";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
@@ -163,9 +168,26 @@ function AnalyzePage() {
 
       {loading && <LoadingWorkspace />}
 
+      {error && !loading && (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6 text-center">
+          <ShieldAlert className="mx-auto size-8 text-destructive" />
+          <p className="mt-3 text-sm font-semibold text-foreground">{error}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Please make sure the FastAPI server is running: <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">python -m uvicorn backend.main:app --port 8000</code>
+          </p>
+          <button
+            type="button"
+            onClick={() => void run(text)}
+            className="mt-4 inline-flex items-center gap-2 rounded-md bg-destructive px-3.5 py-1.5 text-xs font-medium text-destructive-foreground transition hover:opacity-90"
+          >
+            <RefreshCw className="size-3.5" /> Retry Request
+          </button>
+        </div>
+      )}
+
       {result && !loading && <Workspace result={result} onRegenerate={() => void run(result.query)} />}
 
-      {!result && !loading && (
+      {!result && !loading && !error && (
         <div className="rounded-xl border border-dashed border-border bg-card/50 p-10 text-center">
           <Wand2 className="mx-auto size-6 text-muted-foreground" />
           <p className="mt-3 text-sm font-medium text-foreground">No analysis yet</p>
@@ -328,7 +350,7 @@ function Workspace({ result, onRegenerate }: { result: AnalysisResult; onRegener
           result.retrieved_cases.length
             ? result.risk_level === "critical"
               ? "Retrieved for context — not used to generate safety instructions."
-              : `${result.retrieved_cases.length} nearest neighbours from ${RETRIEVAL_EVAL.corpusSize.toLocaleString("en-US")} indexed support conversations`
+              : `${result.retrieved_cases.length} nearest neighbours from 65,239 indexed support conversations`
             : "Retrieval skipped for this query"
         }
       >

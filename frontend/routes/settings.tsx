@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Lock } from "lucide-react";
 import { Panel, Pill } from "@/components/primitives";
-import { INTENT_CLASSES, RETRIEVAL_EVAL } from "@/services/demoData";
+import { INTENT_CLASSES } from "@/services/demoData";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({
@@ -37,8 +37,8 @@ const groups: { title: string; description: string; rows: [string, string][] }[]
     title: "Embedding model",
     description: "Used for retrieval over the historical corpus",
     rows: [
-      ["Model", RETRIEVAL_EVAL.embeddingModel],
-      ["Dimensions", `${RETRIEVAL_EVAL.dimensions}`],
+      ["Model", "sentence-transformers/all-MiniLM-L6-v2"],
+      ["Dimensions", "384"],
       ["Normalisation", "L2 normalised"],
       ["Max sequence length", "256 tokens"],
     ],
@@ -47,10 +47,10 @@ const groups: { title: string; description: string; rows: [string, string][] }[]
     title: "FAISS index",
     description: "Historical support corpus",
     rows: [
-      ["Index type", RETRIEVAL_EVAL.indexType],
-      ["Documents", RETRIEVAL_EVAL.corpusSize.toLocaleString("en-US")],
-      ["Top-K retrieved", `${RETRIEVAL_EVAL.topK}`],
-      ["Minimum similarity", `${RETRIEVAL_EVAL.minSimilarity}`],
+      ["Index type", "Dense Vector Similarity (IndexFlatIP)"],
+      ["Documents", "65,239"],
+      ["Top-K retrieved", "3"],
+      ["Minimum similarity", "≥ 0.35"],
     ],
   },
   {

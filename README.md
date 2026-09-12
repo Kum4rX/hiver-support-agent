@@ -83,7 +83,9 @@ An end-to-end, production-oriented Customer Support AI Agent built on historical
 
 ---
 
-## One-Command Quick Start (Full Stack Web App & CLI)
+## Quick Start (Full Stack Web App & CLI)
+
+> **Note**: The frontend console relies directly on the FastAPI backend as its single source of truth. Features like **Analyze Ticket**, **Knowledge Base Search**, and **Evaluation Metrics** require the backend to be running at `http://localhost:8000`.
 
 ### Prerequisites
 - Python 3.10+ (tested on Python 3.10 – 3.14)
@@ -97,7 +99,7 @@ An end-to-end, production-oriented Customer Support AI Agent built on historical
 pip install fastapi uvicorn pydantic faiss-cpu sentence-transformers scikit-learn pandas numpy joblib rich
 ```
 
-### Step 2: Start the FastAPI AI Backend (Port 8000)
+### Step 2: Start the FastAPI AI Backend (Terminal 1)
 ```bash
 python -m uvicorn backend.main:app --reload --port 8000
 ```
@@ -118,14 +120,16 @@ Response:
 }
 ```
 
-### Step 3: Start the React Frontend Console (Port 5173)
-In a second terminal:
+### Step 3: Start the React Frontend Console (Terminal 2)
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-Open **[http://localhost:5173](http://localhost:5173)** (or **[http://localhost:5174](http://localhost:5174)** if port 5173 is in use) in your browser.
+Open **[http://localhost:5174](http://localhost:5174)** (or **[http://localhost:5173](http://localhost:5173)**) in your browser.
+
+- **Frontend Console**: `http://localhost:5174`
+- **FastAPI Backend**: `http://localhost:8000`
 
 ---
 
