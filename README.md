@@ -284,12 +284,20 @@ hiver-support-agent/
 ├── backend/
 │   └── main.py                           # FastAPI REST API server (lifespan loading, CORS, health)
 ├── frontend/
-│   ├── components/                       # UI design system (app-shell, app-sidebar, badges)
-│   ├── routes/                           # 6 TanStack routes (Overview, Analyze, Escalations, etc.)
-│   ├── services/api.ts                   # Typed API client connecting to FastAPI
+│   ├── components/                       # Application UI components (shell, sidebar, primitives)
+│   │   └── ui/                           # Reusable UI component library (shadcn/radix primitives)
+│   ├── routes/                           # 6 TanStack application views (Overview, Analyze, Escalations, etc.)
+│   ├── services/                         # Typed API client, demo fixtures & schema types
+│   │   ├── api.ts                        # Typed client connecting to FastAPI backend
+│   │   ├── curatedDemoScenarios.ts       # Curated live test scenarios for quick demo
+│   │   ├── demoData.ts                   # Static fallback metrics & sample queries
+│   │   └── types.ts                      # TypeScript interfaces matching backend models
 │   ├── public/favicon.svg                # Minimal AI customer support SVG favicon
 │   ├── index.html                        # HTML shell with Google Fonts & meta tags
+│   ├── main.tsx                          # React entrypoint
+│   ├── router.tsx                        # Client-side router configuration
 │   ├── package.json                      # Frontend dependencies & scripts
+│   ├── tsconfig.json                     # TypeScript compiler configuration
 │   └── vite.config.ts                    # Vite build configuration
 ├── src/
 │   ├── preprocessing.py                  # Text normalization & Twitter artifact cleaning
@@ -302,27 +310,46 @@ hiver-support-agent/
 │   ├── pipeline/
 │   │   └── agent_pipeline.py             # End-to-end pipeline orchestrator
 │   └── evaluation/
-│       ├── eval_intent.py                # Intent evaluation harness
+│       ├── eval_all.py                   # Master evaluation runner
+│       ├── eval_intent.py                # Intent evaluation harness (Cross-validation & baselines)
 │       ├── eval_escalation.py            # Safety & risk evaluation suite
 │       ├── eval_retrieval.py             # FAISS retrieval benchmark
 │       ├── eval_response.py              # Guardrails & response quality evaluation
 │       ├── failure_analysis.py           # Systematic error & edge-case analysis
-│       └── eval_all.py                   # Master evaluation runner
+│       └── llm_judge.py                  # LLM-as-a-Judge (Gemini Flash / OpenAI) & agreement engine
 ├── data/
+│   ├── evaluation/                       # Machine-readable evaluation artifacts & benchmark outputs
+│   │   ├── master_evaluation_summary.json# Comprehensive summary of all evaluation suites
+│   │   ├── llm_judge_results.json        # Gemini Flash judge scores & agreement metrics
+│   │   ├── human_review_27.csv           # Independent human ratings for 27 judge-evaluated queries
+│   │   ├── gemini_judge_evaluations.csv  # Detailed query-by-query Gemini judge outputs
+│   │   ├── intent_evaluation_results.json# 11-intent classification metrics (Rule, TF-IDF, Hybrid)
+│   │   ├── escalation_evaluation_results.json # Safety & risk evaluation metrics
+│   │   ├── retrieval_evaluation_results.json  # FAISS dense retrieval benchmark metrics
+│   │   ├── response_evaluation_results.json   # Guardrail compliance & quality metrics
+│   │   └── failure_analysis_results.json      # Structured failure breakdown & root cause records
+│   ├── golden_set.csv                    # Authoritative human-reviewed golden set (200 samples - 100% human)
+│   ├── golden_annotation_audit.jsonl     # Complete audit log tracking all human decisions & timestamps
+│   ├── golden_evaluation_provisional.csv # Historical 189 candidate suggestions (deprecated/superseded)
+│   ├── golden_set_summary.json           # Evaluation summary cache
+│   ├── human_response_quality_template.csv # Evaluation template for human quality scoring
 │   ├── retrieval_documents.csv           # Curated retrieval corpus (65,239 documents)
 │   ├── retriever_filtered_metadata.pkl   # Serialized document metadata (32.5 MB)
 │   ├── apple_support_pairs_clean.csv     # Cleaned customer-agent tweet pairs (23.3 MB)
-│   ├── intent_baseline.joblib            # Trained TF-IDF intent model
-│   └── golden_set_summary.json           # Evaluation summary cache
+│   └── intent_baseline.joblib            # Trained TF-IDF intent model (560 KB)
 ├── build_filtered_index.py               # Generates apple_support_filtered.index from retrieval_documents.csv
-├── train_intent_model.py                 # Intent model training pipeline
+├── clean_pairs.py                        # Cleans raw tweet pairs into filtered AppleSupport corpus
+├── create_pairs.py                       # Extracts and pairs customer queries with agent replies
 ├── demo_cli.py                           # Interactive CLI demo application
-├── golden_candidates.csv                 # 220 candidate evaluation queries across 11 intents
+├── extract_apple_support.py              # Filters raw TWCS dataset for @AppleSupport interactions
+├── golden_candidates.csv                 # Candidate evaluation queries across 11 intents
 ├── golden_reviewer.py                    # Terminal CLI tool for human golden set annotation
-├── golden_set.csv                        # Authoritative human-reviewed golden set (200 samples - 100% human confirmed)
+├── golden_set.csv                        # Authoritative human-reviewed golden set (200 samples - 100% human)
+├── prepare_golden_set.py                 # Generates balanced golden set candidates from clean pairs
+├── prepare_retrieval_data.py             # Prepares retrieval documents & serialized metadata
 ├── requirements.txt                      # Python dependencies
+├── DECISION_LOG.md                       # Architecture decisions & trade-offs (ADRs 001–009)
 ├── REPORT.md                             # Comprehensive engineering evaluation report
-├── DECISION_LOG.md                       # Architecture decisions & trade-offs
 └── README.md                             # Project documentation
 ```
 
