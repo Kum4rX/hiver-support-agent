@@ -1,6 +1,6 @@
 # Hiver AppleSupport AI Agent
 
-An end-to-end, production-grade Customer Support AI Agent built on historical AppleSupport Twitter interactions. The agent ingests customer queries, performs preprocessing and intent classification, enforces safety/escalation guardrails, redirects out-of-domain queries, retrieves relevant historical resolutions via dense FAISS search, synthesizes grounded replies, and validates Twitter platform constraints ($\le 280$ characters).
+An end-to-end, production-oriented Customer Support AI Agent built on historical AppleSupport Twitter interactions. The agent ingests customer queries, performs preprocessing and intent classification, enforces safety/escalation guardrails, redirects out-of-domain queries, retrieves relevant historical resolutions via dense FAISS search, synthesizes grounded replies, and validates Twitter platform constraints ($\le 280$ characters).
 
 ---
 
@@ -188,7 +188,7 @@ Open **[http://localhost:5173](http://localhost:5173)** (or **[http://localhost:
     "pii_safe": true,
     "actionable": true
   },
-  "latency_ms": 133.56
+  "latency_ms": "<measured at runtime>"
 }
 ```
 
