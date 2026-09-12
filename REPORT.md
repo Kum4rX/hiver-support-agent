@@ -102,13 +102,32 @@ The customer intent space is partitioned into 11 distinct operational categories
 ### 2.4 Empirical Evaluation & Dataset Limitations
 
 > [!IMPORTANT]
-> **Data Volume Disclosure**: The human-reviewed `golden_set.csv` currently contains **11 verified samples** (10 `BATTERY_POWER`, 1 `DEVICE_PERFORMANCE`). The required 150–250 hand-labelled golden set is **not yet complete**. The evaluation harness was run against the available data without fabricated labels, and the model is marked as **provisional**.
+> **Data Volume Disclosure**:
+> - The verified human-reviewed benchmark `golden_set.csv` currently contains **11 verified samples** (10 `BATTERY_POWER`, 1 `DEVICE_PERFORMANCE`).
+> - An expanded 200-sample dataset `data/golden_evaluation_provisional.csv` was generated from candidate pool suggestions (`label_source = "auto_provisional"`).
+> - **Provisional labels are NOT equivalent to hand-labelled ground truth.** They reflect concordant candidate suggestions and are exploratory sanity checks.
+> - The assignment requirement of approximately **150–250 hand-labelled examples remains incomplete** until full human review is conducted.
 
-#### Intent Evaluation Results:
-| Classifier Model | Sample Count | Accuracy | Weighted Precision | Weighted Recall | Weighted F1 |
+#### Benchmark Intent Evaluation Results (Human-Labelled Ground Truth):
+*The official benchmark metrics are measured exclusively on the 11 verified human-labelled samples without inflating scores:*
+
+| Classifier Model | Sample Count | Provenance | Accuracy | Weighted Precision | Weighted Recall | Weighted F1 |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **Keyword/Rule Baseline** | 11 | Human Verified | 0.9091 | 0.8264 | 0.9091 | 0.8658 |
+| **Hybrid (Rule + TF-IDF)** | 11 | Human Verified | 0.8182 | 0.8264 | 0.8182 | 0.8182 |
+
+#### Exploratory Provisional Evaluation Results:
+*Measured on `data/golden_evaluation_provisional.csv`. Provided strictly for pipeline code verification across all 11 taxonomy classes:*
+
+| Evaluation Subset | Sample Count | Provenance / Label Source | Hybrid Accuracy | Hybrid Weighted F1 | Interpretation Note |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Keyword/Rule Baseline** | 11 (Provisional) | 0.9091 | 0.8264 | 0.9091 | 0.8658 |
-| **Hybrid (Rule + TF-IDF)** | 11 (Provisional) | 0.8182 | 0.8264 | 0.8182 | 0.8182 |
+| **Subset A: Human-Only** | 11 | `human` (Verified) | 0.8182 | 0.8182 | Official small-sample sanity check |
+| **Subset B: Auto-Provisional** | 189 | `auto_provisional` | 1.0000 | 1.0000 | **Provisional / auto-labelled — not ground truth** |
+| **Subset C: Combined Provisional** | 200 | 11 `human` + 189 `auto_prov` | 0.9900 | 0.9924 | **Provisional / auto-labelled — not ground truth** |
+
+> [!WARNING]
+> **Why Provisional Scores (F1 ~0.99) Are Not Ground Truth**:
+> The provisional labels were derived from candidate pool suggestions where keyword and classifier predictions were concordant. Evaluating against these labels naturally yields near-perfect metrics (~0.99 F1), but this is circular verification of classifier consistency, **not independent human validation**. True production benchmark evaluation requires manual human labeling.
 
 ---
 
@@ -192,8 +211,11 @@ To guarantee reliability and 100% offline reproducibility without requiring API 
 In the spirit of scientific integrity and engineering transparency, we explicitly document where headline metrics must be interpreted with caution:
 
 1. **The 0.8658 Intent F1 Headline Number is NOT a Production Metric**:
-   - The human-reviewed `golden_set.csv` contains only **11 verified samples** (10 `BATTERY_POWER`, 1 `DEVICE_PERFORMANCE`). The remaining 209 candidate rows in `golden_candidates.csv` are keyword-suggested and have not yet undergone full human review.
-   - Reporting 0.8658 or 1.0000 on 11 samples is a small-sample sanity check of the code execution path, **not statistical evidence of model generalization**. A production benchmark requires a balanced 150–250 hand-reviewed golden set.
+   - The verified human-reviewed `golden_set.csv` contains only **11 verified samples** (10 `BATTERY_POWER`, 1 `DEVICE_PERFORMANCE`).
+   - An expanded 200-sample dataset `data/golden_evaluation_provisional.csv` contains these 11 verified samples plus 189 auto-provisional candidate suggestions (`label_source = "auto_provisional"`).
+   - Evaluating on the 200-sample provisional dataset yields ~0.9924 F1, but this score is exploratory and circular because provisional labels were filtered for concordance with candidate suggestions. It must **never** be presented as an authentic human benchmark.
+   - The assignment requirement of approximately 150–250 hand-labelled examples remains incomplete until full human review has occurred.
+   - Reporting 0.8658 on 11 human samples is a small-sample sanity check of the code execution path, **not statistical evidence of model generalization**. A production benchmark requires a balanced 150–250 hand-reviewed golden set.
 
 2. **FAISS Cosine Similarity ($\ge 0.35$) is NOT Human Relevance**:
    - A 100.0% retrieval hit rate indicates that the dense retriever found vector neighbors with cosine similarity above threshold in the 65,239-document corpus.
@@ -242,10 +264,10 @@ End-to-End Pipeline Latency      | Mean Latency             | 225.37 ms
 
 ## 9. Limitations & Future Work
 
-1. **Golden Set Scope**:
-   > The required 150–250 hand-labelled Golden Set was not completed in this iteration. Intent metrics are therefore provisional and should not be interpreted as definitive production performance.
+1. **Golden Set Scope & Provenance**:
+   > The required 150–250 hand-labelled Golden Set was not completed in this iteration. The verified human-reviewed benchmark contains 11 samples. While an exploratory 200-sample dataset (`data/golden_evaluation_provisional.csv`) is provided for pipeline verification, its auto-provisional metrics are exploratory and must not be interpreted as definitive production benchmarks.
    
-   The human-reviewed benchmark currently contains 11 verified samples used as a functional sanity check. The evaluation harness and `golden_reviewer.py` workflow are fully implemented and ready to ingest a full 200-sample hand-labelled golden set without any architectural modifications.
+   The human-reviewed benchmark currently contains 11 verified samples used as a functional sanity check. The evaluation harness, comparative subset runner (`eval_intent.py --all-subsets`), and `golden_reviewer.py` workflow are fully implemented and ready to ingest a full 200-sample hand-labelled golden set without any architectural modifications. Full human verification of the candidate pool remains the primary prerequisite before declaring production readiness.
 
 2. **Retrieval Semantic vs. Factual Accuracy**:
    FAISS vector retrieval demonstrates strong cosine similarity (mean 0.7510 across 65,239 documents), but cosine similarity measures vector alignment rather than human-verified factual accuracy. A future iteration will integrate human relevance judgments for Top-1 and Top-3 matches.

@@ -1,0 +1,201 @@
+﻿tweet_id,customer_text,intent,escalation,escalation_reason,label_source
+2911734,iOS 11.1.2 draining battery life. Last almost a day from full charge. Half as long when compared to previous iOS. Please sort.,BATTERY_POWER,no,,human
+2942126,Because nowadays we pay $800+ for phones to last us 2 years. There's so many battery issues and now it's charging without a charger.,BATTERY_POWER,no,,human
+2485674,"what is the official recommendation for leaving an iPhone X on a wireless charging pad (like in a desk set up) for extended periods of time? Is it bad for the battery to be constantly topped off, or is charger/phone smart? Looking at the Mophie in the Apple Store.",BATTERY_POWER,no,,human
+2121055,11.0.3 giving me feeling like i'm using android phone..battery draining too fast as compared to ios 10.3.3. gets hot when put on charge. IOS 10.3.3 was best according to me. using iphone se,BATTERY_POWER,no,,human
+2425815,"My computer charger doesn't work very well (the cord was chewed by my cat) only works if the cord is held at a specific angle, and if it disconnects my computer just shuts off. But I can turn it back on and it's capable of running on battery power for a few hours. whyyyyyy",DEVICE_PERFORMANCE,no,,human
+2812628,"I have a problem with the iPhone X battery, when I charge it .. Charging for very little time. What is the solution?",BATTERY_POWER,no,,human
+2680020,My iPhone takes forever to charge but the battery dies within an hour or 2?,BATTERY_POWER,no,,human
+2147785,when getting a new iphone what is the best thing to do for the battery? use it till it fully dies than full charge or charge fully before use? or?,BATTERY_POWER,no,,human
+1829193,"charged my iPhone around 12:30am with 35% woke up this morning, DRAINED MY BATTERY INSTEAD OF CHARGING IT!! #FixThisASAP",BATTERY_POWER,no,,human
+553474,"Not what was wrong. I reset phone, holding power and volume, more than 3 times. Then my phone went from 100% battery to 10% & dying in 3hrs. I didn’t plug charger letting it drain. Plugged in charger, it started charging and now it’s not locking me out",BATTERY_POWER,no,,human
+146683,"IOS 11.1.2 battery draining is shitting on me. My iPhone 6S’ battery literally goes from 70% to 30% in minutes, and to make it worse, it takes over 4 hours to fully charge.",BATTERY_POWER,no,,human
+2406560,"Hey Apple, so my IPhone X frequently doesn't connect with my carrier. It shows full cellular phone bars and internet connection but I cant call nor my cellular internet works. This happens frequently. The phone is like 1 week new. Please help!",CONNECTIVITY,no,,auto_provisional
+1878001,#IOS11 is the worst update ever! Apps don’t work when on wifi & Bluetooth connections stop if I touch my phone. sort it out!,CONNECTIVITY,no,,auto_provisional
+2213578,Wow update bricked my phone basically don’t get internet signal unless on wifi,CONNECTIVITY,no,,auto_provisional
+1645797,my data wheel will not stop spinning. All apps closed. Good connection to WiFi and cellular. Please help,CONNECTIVITY,no,,auto_provisional
+1638757,Same here. And now I don’t have internet connection unless connected to WiFi thanks a lot. #thisupdatesucks,CONNECTIVITY,no,,auto_provisional
+1296680,My phone doesn't like to load any app data or anything when on WiFi. Only on cellular. Restored and tried multiple networks,CONNECTIVITY,no,,auto_provisional
+208951,Yo WTF is with this auto WiFi and Bluetooth connection... it’s mad annoying!!!,CONNECTIVITY,no,,auto_provisional
+2352122,cellular signal has been super unreliable on #AppleWatchSeries3 Smh What am I paying for? Can't use if I have no signal. #redxonapplewatchallday #nowifinouse,CONNECTIVITY,no,,auto_provisional
+2621266,"iPhone 8 AirDrop problem! Tried every single method on the internet no joy! Turn old iPho 6 on instant connection! all setting exactly the same. Reset network connections, Logged out/in iCloud, reset all BT and wifi settings on iMac late 2013, and iPho on ios11.1.2",CONNECTIVITY,no,,auto_provisional
+1083350,it says i have no internet connection but it shows wifi is connected and still does nothing on cellular data... using an iphone se,CONNECTIVITY,no,,auto_provisional
+870229,can't download apps on iOS 11.0.3 iPhone 7 on wifi or cellular (full bars LTE).,CONNECTIVITY,no,,auto_provisional
+58849,"4G. In fact, my internet connection was used to create this tweet at the time so I have to assume the network was not the cause.",CONNECTIVITY,no,,auto_provisional
+120682,"My Apple Watch is still not connecting to Wi-Fi. Did everything: forgetting & reconnecting iPhone Wi-Fi, shutting-off devices & Bluetooth, repairing... Wi-Fi network is 2,4Ghz and 11b/g/n. Called French . They were so lost I decided to get another coffee ☕️. Help?",CONNECTIVITY,no,,auto_provisional
+699564,"I don’t know what to do. I upgraded my iOS last night and lost WiFi connections. I can see them. Strong signal. Rebooted, reset everything. Nothing helps.",CONNECTIVITY,no,,auto_provisional
+2449498,"Wish #Apple would remember what I had on, before I turned on the #AirplaneMode. Now, once I goto AirplaneMode & later switch it off, then by default, #iPhone switches on WiFi,Bluetooth & CellularData. #iOS11 #userexperience #uxdesign",CONNECTIVITY,no,,auto_provisional
+1366346,"Dear , why is my IOS 11 update slowing my phone down & keep turning on my WiFi & Bluetooth & changing my cellular LTE off?",CONNECTIVITY,no,,auto_provisional
+2293536,Its definitely my home wifi. I cant rule out cellular or other wifi networks being an issue but its definitely regularly happening with loading my twitter feed.,CONNECTIVITY,no,,auto_provisional
+2309872,i have both tried with a wifi connection or using cellular data and tried typing the password myself but nothing seems to work,CONNECTIVITY,no,,auto_provisional
+1141095,"7 plus, cellular connection. 4 bars & LTE, still won’t load",CONNECTIVITY,no,,auto_provisional
+2646254,"hey, got two lost phone calls from (512) 674-2000 that is you right?",CALLS_COMMUNICATION,no,,auto_provisional
+2799476,"#Siri and I have always had issues. I was driving and I told her to call someone. No, she didn’t call the person on the phone. She kept calling out the person’s name over and over and over. She is such a smart aleck.",CALLS_COMMUNICATION,no,,auto_provisional
+2730325,good morning. My visual voicemail disappeared this morning and I’m now being asked to call my voicemail.,CALLS_COMMUNICATION,no,,auto_provisional
+2894808,"My bluetooth was off, i checked (pull down top right) and I had been getting notifications and phone calls on my apple watch. WTH .",CALLS_COMMUNICATION,no,,auto_provisional
+2894757,"i just get a this message ""You will receive a text or a phone call at this number when your account is ready to recover on 11 December 2017 at 21:52:39 GMT+5.50. For updated status information or to provide additional information to help recover your account""but never got a call.",CALLS_COMMUNICATION,no,,auto_provisional
+2869706,"and above that the phone call ended and u couldn't even call me back and when i phoned again i had to explain it all over... and then the conexion was lost, AGAIN... so not happy with apple",CALLS_COMMUNICATION,no,,auto_provisional
+1571715,So my FaceTime is working but phone calls or voice notes are not. Why is this ???? Do you realise how inconvenient this is for a girl,CALLS_COMMUNICATION,no,,auto_provisional
+62256,Why my iMessage & FaceTime keep saying is waiting fo activation 😩 help me out,CALLS_COMMUNICATION,no,,auto_provisional
+2520777,My LTE works fine but when I connect to WIFI and then leave that location is no longer works. I can make calls and SMS but apps and iMessage no longer work. I have tried all the work-arounds. It is either an iOS issue or a hardware issue,CALLS_COMMUNICATION,no,,auto_provisional
+1450121,"I’m on iPhone 6 Plus (newest software). Reset most things and it won’t connect. Can only SMS and call, no iMessage or FaceTime.",CALLS_COMMUNICATION,no,,auto_provisional
+1882758,I can’t make phone calls anymore thanks to ios11 so I have to facetime everyone,CALLS_COMMUNICATION,no,,auto_provisional
+769556,"iPhone call app all blurry & unusable after iOS 11 update. Can’t make calls/access voicemail. Any tips to fix? Oh, and “Grrrr” to 😡",CALLS_COMMUNICATION,no,,auto_provisional
+2747288,"Hey I just discovered a bug on the iPhone X (iOS 11.1.2) when you are in a FaceTime Audio call, you are not able to shutdown any applications. Its kinda annoying, i hope it gets fixed soon.",CALLS_COMMUNICATION,no,,auto_provisional
+2920032,", looks like there is a scammer calling your customers with spoofed Apple numbers and directing customers to call a number in San Diego. I've received three calls in less than 24hrs. Others reporting similar scam experiences. Voicemail transcript attached.",CALLS_COMMUNICATION,no,,auto_provisional
+2695112,back in touch ever since. Am now heading back go university where I am unable to use anyone else’s phone to make a phone call to apple support nor can I receive any calls on my phone to resolve issue. Before I was disconnected I was told it was a software issue. 2/2,CALLS_COMMUNICATION,no,,auto_provisional
+2575316,"Getting glitchy audio when calling with FaceTime Audio with 11.1 with AirPods. I can hear for 2 seconds, then blank, then 2 seconds again. Apparently, they can hear me, but I can’t hear them...",CALLS_COMMUNICATION,no,,auto_provisional
+2771891,Oh #iphone update? Let’s call it “time to mess your phone up until you buy a new one even though your phone is only 7 months old”. #letscallthiswhatitreallyis WHERE ARE MY VOICEMAILS?,CALLS_COMMUNICATION,no,,auto_provisional
+2771913,I’m trying to login into facetime and imessages from my iPad. I have the same error message for 3 days.,CALLS_COMMUNICATION,no,,auto_provisional
+2518196,Okay now all of a sudden my phone won’t even let me call anyone?? anyone that i try calling it just goes straight to voicemail and doesn’t even ring. WHAT IS GOING ON WITH U PEOPLE??,CALLS_COMMUNICATION,no,,auto_provisional
+2975694,Why does my iPad keep asking me to sign into iCloud every 30 seconds but when I put in my NEWLY changed password it tells me it is incorrect!!! WTF...I can't even use it right now!,ACCOUNT_ICLOUD,no,,auto_provisional
+2369448,"Yes I can login to appleid without any issue, icloud still go no.",ACCOUNT_ICLOUD,no,,auto_provisional
+249189,"I changed my AppleID login & pass, but can't sign into the app store on my iPhone 7. My iPad didn't have this problem.",ACCOUNT_ICLOUD,no,,auto_provisional
+2058730,My icloud account has been locked for security reasons. Even my Apple ID is locked. I can't receive my confirmation code.,ACCOUNT_ICLOUD,no,,auto_provisional
+2041261,Is iCloud on iOS on the fritz again?! I can't log in to any of my devices. Desktop login is ok but iOS logins are locking my account up. This sucks Apple!,ACCOUNT_ICLOUD,no,,auto_provisional
+1901334,I have an ICloud account but when I try to login online it asks me to set up an account. Am I doing something wrong?,ACCOUNT_ICLOUD,no,,auto_provisional
+313005,As well as logging me out of all my internet accounts and iCloud. It also removed all my saved passwords and safari extensions.,ACCOUNT_ICLOUD,no,,auto_provisional
+2909284,I can't access my apple ID. After my marriage ended my phone number changed & now apple cannot help me access my icloud account. Was on the phone 3 times with support & was hung up on all three times...needless to say galaxy here I come. #donewithapple,ACCOUNT_ICLOUD,no,,auto_provisional
+2801470,"I am able to sign in to a non admin account, but when I try to make changes I am prompted for my Apple ID and password, which are rejected. They are both known to be correct and working on other Apple devices",ACCOUNT_ICLOUD,no,,auto_provisional
+1766805,"No. I'll try to login to my Apple ID, says ""signing into iCloud"", & then takes me straight back to the login page again. Therefore, I'm unable to sign into the app store, Apple music, etc. I've tried restarting my phone multiple times too with no luck.",ACCOUNT_ICLOUD,no,,auto_provisional
+1631265,I really wish would allow me to set my iCloud email as my AppleID Really a pain that its the only account not using that email,ACCOUNT_ICLOUD,no,,auto_provisional
+557798,I forgot my 4degits passcode on my iPhone so was told i can unlock so when unlocking it will it require icloud account to work again? Because i know the icloud account but cant remember the password though😢😢,ACCOUNT_ICLOUD,no,,auto_provisional
+2816380,"I'm able to sign in on the computer to the HBO now website, but what's worried about is when the next billing cycle comes, I no longer have the old Apple ID and I don't see the HBO purchase on the new Apple ID account",ACCOUNT_ICLOUD,no,,auto_provisional
+804099,I don’t understand why my password is different on my computer than the iCloud/Apple ID password that I just changed yesterday. :-/,ACCOUNT_ICLOUD,no,,auto_provisional
+552134,"Every new screen even before I unlock my phone I get the white screen that says sign in required w email address, place to type password and cancel or continue options. How do I make this ANNOYANCE STOP? Happened before update to iOS11.2 and worse after this update.",ACCOUNT_ICLOUD,no,,auto_provisional
+1689343,I literally entered my password correctly to sign into iCloud online and I’ve been locked out of my account - why ??,ACCOUNT_ICLOUD,no,,auto_provisional
+2867259,my Apple ID won’t sign in to iCloud and iMessage ever since I updated to Mac High Sierra pls help :(,ACCOUNT_ICLOUD,no,,auto_provisional
+2894754,I am unable to get access to my Apple ID as I forgot the password and I tried to recover my account many times but it’s not working please help,ACCOUNT_ICLOUD,no,,auto_provisional
+2894779,I'm trying to get my iPhone 7 ready for recycling but I can't delete my iCloud account. I get a message saying 'Couldn't delete account. The account may be syncing data. Please try again.' I've also tried signing out on the Apple ID page but nothing happens.,ACCOUNT_ICLOUD,no,,auto_provisional
+46836,I Found an iPad on the train how can I return it to its rightful owner?,HOW_TO_OTHER,no,,auto_provisional
+1638986,"Hi, all my FB contacts are in contacts. How do I make them go away? Doesn't work through groups our FB settings!",HOW_TO_OTHER,no,,auto_provisional
+2947137,I’m having terrible trouble with my iPhone 7 since the update. Today it’s erased all my contacts how Can I fix this??,HOW_TO_OTHER,no,,auto_provisional
+1980705,In settings > calendar (where do I turn off?),HOW_TO_OTHER,no,,auto_provisional
+2014269,"message pops up every two minutes, but my iphone is up to date according to settings. please advise on how to correct this?",HOW_TO_OTHER,no,,auto_provisional
+2111490,Hey how do I my Settings configurations an app from my old phone that’s saved on the iCloud ?,HOW_TO_OTHER,no,,auto_provisional
+2341810,Every fucking time I go to my settings I see this shit and it makes me sick and pissed like Can I change my name and contact info ? Like for real I made this account when I was 18,HOW_TO_OTHER,no,,auto_provisional
+2945672,how can i remove the payment info in my phone??? huhuhu,HOW_TO_OTHER,no,,auto_provisional
+5817,I can’t change lock screen anymore from ‘wallpaper’ in settings. How do I do it now?,HOW_TO_OTHER,no,,auto_provisional
+2322545,"Since this morning, I seem to get iMessages on my Mac, but not on my iPhone... I didn't change anything in my settings... How can I fix this?",HOW_TO_OTHER,no,,auto_provisional
+1020998,"my iPhone 6S running 11.03 now runs slowly, especially the UI. I reset settings. what else can I do, ?",HOW_TO_OTHER,no,,auto_provisional
+2639712,hi. I got a red 1 in General settings and yet my iPad Air 2 tells me that iOS 11.1.1 is up to date. How to update to 11.1.2?,HOW_TO_OTHER,no,,auto_provisional
+81977,"Yup. Am a member. Normally make updates on iTunes on the comp, listen on-the-go on my phone. The iCloud Lib on/off button turns on and then back to off once I leave Settings. Since yest morning. Haven’t made any setting/other changes. Normal operation",HOW_TO_OTHER,no,,auto_provisional
+486205,"Could you please advise on how to fix visual voicemail, if resetting network settings doesn’t work?",HOW_TO_OTHER,no,,auto_provisional
+2915973,how do I fix the screen rotation bug in iOS 11? Nothing seems to rotate to landscape (and yes I have checked the rotate lock setting). Thanks.,HOW_TO_OTHER,no,,auto_provisional
+407939,Thank you! My phone was set to backup when the device was plugged in to charge rather than manual backup. How can I check these settings?,HOW_TO_OTHER,no,,auto_provisional
+2944488,My iPhone6s is still not using the ringtone saved in settings just a default ring even after backup & update wtf,HOW_TO_OTHER,no,,auto_provisional
+2944513,Yes it’s already signed into the ID I’ve changed it on the settings but it’s still asking for my old number when trying to make a purchase on the App Store,HOW_TO_OTHER,no,,auto_provisional
+2295916,Yo how to I get my events into my calendar on the iPhone 8? I have selected 'Facebook events' in the Calendars settings but I appears to only import some events?,HOW_TO_OTHER,no,,auto_provisional
+1767395,Apple-iphone definitely was hacked-THOUSANDS of gigs of #photos #disappeared overnight,SECURITY,no,,auto_provisional
+1503994,this is a scam/phishing right?,SECURITY,no,,auto_provisional
+301561,ICloud has been hacked by a very sick person. PLEASE PLEASE help her get it back immediately. I love u Amy!,SECURITY,no,,auto_provisional
+195948,iCloud hacked & am now locked out of my Mac which now asks for a 6 digit pin or to contact support on __email__...,SECURITY,yes,"Account security breach, compromised credentials, or active theft detected.",auto_provisional
+187657,Someone hacked my iPhone and used find my iPhone to get my location on ALL my devices 2 factor authentication was on,SECURITY,yes,"Account security breach, compromised credentials, or active theft detected.",auto_provisional
+566711,"I know my account isn’t hacked or anything, someone would have to be on my phone to do this. I can’t cancel them, and I have no idea how they got there.",SECURITY,no,,auto_provisional
+1726625,Literally hate right now!!! Have to censor the use of a certain letter. Feel like my phone got hacked!!!😭😭😭,SECURITY,no,,auto_provisional
+1020988,Hey I’ve dmed you. Please check it. I think my macbook is hacked,SECURITY,no,,auto_provisional
+172953,As much as I love I’m about to switch... my account has been hacked for MONTHS!! I’m so pissed. So much money stolen.,SECURITY,no,,auto_provisional
+959707,Um is this legit? I don’t want to get hacked but don’t want to get locked out like this is threatening,SECURITY,no,,auto_provisional
+1156773,Thanks! Phishing scam for sure!,SECURITY,no,,auto_provisional
+852886,hi. I got this email from what claims to be Apple Security. Email address is dubious. Could be phishing.,SECURITY,no,,auto_provisional
+112840,"received email that seems fraudulent. Says my ID used in Mexico. Have not been in Mex. My computer is ""suspicious"" of the link to unlock. Need help but it's getting late in UK. Help?",SECURITY,no,,auto_provisional
+1818503,I think my phone is hacked after I updated the new IOS. I know a lot of other people having same issue,SECURITY,no,,auto_provisional
+2346098,for the past few days I’ve been getting #phishing emails sent re: Apple account how do I alert #apple that their systems may have be hacked?,SECURITY,no,,auto_provisional
+1650091,how do i reset my appleID if the phone number registered to MY ID is one I do not recognized? #hacked #PLEASEHELP,SECURITY,no,,auto_provisional
+1683456,"Me, too! I️ thought my phone had been hacked. Please help .",SECURITY,no,,auto_provisional
+955696,"So my apple iD just got hacked and obviously, I got an African mum. Can we sort this before she scroll's down OUR contacts? :/",SECURITY,no,,auto_provisional
+889064,Somebody hacked my Apple account and ain’t doing nothing to fix it.,SECURITY,yes,"Account security breach, compromised credentials, or active theft detected.",auto_provisional
+1512188,"It's OK, I fixed it! SwiftKey hasn't updated with the new emojis and that's my primary keyboard. All good! 🙂",KEYBOARD_INPUT,no,,auto_provisional
+1606758,text is hidden by keyboard when I type in safari on iOS 11.1,KEYBOARD_INPUT,no,,auto_provisional
+1703075,WHAT THE FUCK IS WRONG WITH MY KEYBOARD I️ CANT TYPE THE LETTER I️ LIKE WTF,KEYBOARD_INPUT,no,,auto_provisional
+1583118,Emoji suggestions in iPhone X US English keyboard do not show despite add/remove of Emoji keyboard and reenabling of “Predictive”.,KEYBOARD_INPUT,no,,auto_provisional
+1583123,WTH is going on with your crazy keyboard? Every time I type an “i” using my iPhone this 👇🏽happens. Please fix this!!!,KEYBOARD_INPUT,no,,auto_provisional
+1492633,autocorrect likes to correct words to random things. Like more always goes to Moré I have never once needed to type Moré. How do I fix this? I checked in text replacement and I’ve been through the keyboard settings but I haven’t found a way to solution. Any ideas?,KEYBOARD_INPUT,no,,auto_provisional
+1751444,Yo your keyboard can autocorrect “nsync” to *NSYNC but you can’t push out a fix for the I issue??,KEYBOARD_INPUT,no,,auto_provisional
+2193484,really made an emoji for the letter “I” instead of fixing the issue lol. Nobody is switching back and forth between keyboards anytime they wanna type the letter “I” 😂🙃,KEYBOARD_INPUT,no,,auto_provisional
+31425,Is anyone else ‘I’ turning into a question mark when they type? I️ have a i on my emoji keyboard too?,KEYBOARD_INPUT,no,,auto_provisional
+1828435,"iOS 11 is pants, constantly crashing for a few minutes whilst typing on my keyboard, notably when using emojis...",KEYBOARD_INPUT,no,,auto_provisional
+2967892,I have the iPhone SE and I keep having trouble where when I am typing the keyboard has trouble keeping up with what I am typing and lags extremely bad and doesn’t gather everything I am typing. I have already tried restarting it and that doesn’t seem to work.,KEYBOARD_INPUT,no,,auto_provisional
+52257,"I have iOS 11.0.3 and my keyboard keeps autocorrecting the letter i to a weird symbol similar to ""A ?"" and it won't change.",KEYBOARD_INPUT,no,,auto_provisional
+2962816,Are you aware that the iOS keyboard randomly adds a ‘capital’ letter to words mid sentence... Here’s an example with the word Car ! Why does is auto correct to a capitol C ??,KEYBOARD_INPUT,no,,auto_provisional
+56984,"how do I get my keyboard to STOP auto correcting the letter ""I️"" to a symbol. See attached photo.",KEYBOARD_INPUT,no,,auto_provisional
+2360404,"Sure. So when I type or click on something (like the keyboard, emoji keyboard, text box, etc) the response time is much slower. It stops for a bit then responds. It was not like this before iOS 11.1.1. I’ve not done anything to try to fix it.",KEYBOARD_INPUT,no,,auto_provisional
+1716617,can y’all fix our keyboards b/c everytime someone types the letter i all I see is a letter A and a box with a question mark!,KEYBOARD_INPUT,no,,auto_provisional
+1735882,y’all have to fix this problem with the keyboard. I’m tired of typing this 👉🏾 I️,KEYBOARD_INPUT,no,,auto_provisional
+1240111,"yo every time i type “it” auto corrects to I.T. My friends are also having this problem, resetting keyboard does nothin",KEYBOARD_INPUT,no,,auto_provisional
+1060566,This new IOS update is awful my phone constantly crashes and freezes I can barely use it.When is this going to be fixed?!!?,DEVICE_PERFORMANCE,no,,auto_provisional
+2584329,Dear it is not ok that your iOS updates turn my iPhone6s into a brick. YOU STILL SELL 6s’s!!!! Enough with the software updated forcing hardware purchases to the tune of a grand b/c devices can’t handle it and slow to a crawl or freeze.,DEVICE_PERFORMANCE,no,,auto_provisional
+2291653,since the new update 11.1.2. Apps freeze/crash when I go onto them. I need to get out of all apps for one app to work normal. Phone has also turned off twice & I’ve not been able to turn it back on for 15 mins. Phone in general is lagging.Will next update fix this?,DEVICE_PERFORMANCE,no,,auto_provisional
+584795,"Yes it does. I’ve deleted apps, reinstalled them, closed them, restarted my phone, but nothing seems to work. It still slows down, freezes, and crashes",DEVICE_PERFORMANCE,no,,auto_provisional
+366546,"Dear My iphone6S does not like IOS11 11.01 or 11.02. It's glitchy, apps don't open, my lock screen freezes and goes black and everything is basically on a 5 second delay. Siri is slower than dirt. It is annoying. Any suggestions? #iOS11 #ios11update",DEVICE_PERFORMANCE,no,,auto_provisional
+1202878,"iOS 10.0.3 full of bugs. Since applying this update my iPhone 6 plus runs v slow, freezes & a number of apps no longer work",DEVICE_PERFORMANCE,no,,auto_provisional
+1006083,after update of ios 11.0.2 my iphone 6s screen freeze and phone has become slow with battery drain . Please help,DEVICE_PERFORMANCE,no,,auto_provisional
+793408,"#ThursdayThoughts since last ios update, my phone has gone slow, freezes as crashes. Battery evaporates in hours 👎🏻👎🏻👎🏻",DEVICE_PERFORMANCE,no,,auto_provisional
+2555415,"after installing iOS 11 on to my iPhone 6, a lot of apps are crashing and it sometimes freezes my entire phone, I have to force a restart everytime this happens. Furthermore, the apps seem to lag whilst launching e.g. Youtube, is there a new update coming out? 1/2",DEVICE_PERFORMANCE,no,,auto_provisional
+2062281,updates to iOS 11 and phone freezes/crashes 10+ per day? 😔,DEVICE_PERFORMANCE,no,,auto_provisional
+483177,"Seems I woke up to a new update. Restarted and palpable slowdown in my Safari and Chrome. Start a video and the fan goes like crazy, Safari freezes., Chrome just keeps loading",DEVICE_PERFORMANCE,no,,auto_provisional
+1873022,Swear my iPhone hasn’t been working correctly ever since I updated to ios11.1 apps crash on their own and phone freezes up,DEVICE_PERFORMANCE,no,,auto_provisional
+1936758,"Since the update it freezes, crashes, stops podcasts and just dies so I have to restart it. The battery is also a joke on this update. I've tried re-downloading apps etc.",DEVICE_PERFORMANCE,no,,auto_provisional
+2833021,"After iOS 11.1.2 update, my phone slowed down and started to freeze. this happened to a few friends. why can we do it.",DEVICE_PERFORMANCE,no,,auto_provisional
+354521,iOS 11 usually Facebook will freeze and Instagram runs really slow and crashes damn near everything on the phone is laggy,DEVICE_PERFORMANCE,no,,auto_provisional
+1956876,Hey the new iPhone ios11 update (11.0.3) sucks - my apps freeze and crash. Worst ever update please fix and fast,DEVICE_PERFORMANCE,no,,auto_provisional
+188624,"Hey you’re new iOS 11 is HORRIBLE. Even the new update is awful. My iMessages has lots of delays, freezes and is slow. #fail",DEVICE_PERFORMANCE,no,,auto_provisional
+808910,The iOS 11 update slows down my productivity at work bc my apps (native & 3rd party) consistently freeze/crash - fix it !,DEVICE_PERFORMANCE,no,,auto_provisional
+118068,someone tell me why i can’t airdrop videos from my phone to my laptop or why the photos app won’t pop up when i plug my phone into my laptop?! i need to transfer vlog footage 🤬🤬🤬 pls help me,APPS_MEDIA,no,,auto_provisional
+1332418,why are entire albums in my Apple Music lists suddenly either greying out or disappearing from iTunes altogether? Copyright?,APPS_MEDIA,no,,auto_provisional
+1147023,Hello Facebook application is consuming a lot of battery is glad you find a solution for it,APPS_MEDIA,no,,auto_provisional
+1646233,why can’t I click on and listen to songs from my iTunes library all of a sudden? Keep being promoted to join Apple Music,APPS_MEDIA,no,,auto_provisional
+457194,"It freezes randomly when opening most of my apps and lasts for several seconds, this has never happened before. I have ‘Reset all Settings’ and it works a bit better, but I still have problems. Happens with apps such as Facebook, Instagram, Google Chrome, etc. Very frustrating",APPS_MEDIA,no,,auto_provisional
+619524,"Help, j’ai restauré puis j’ai reconfiguré mon iPhone a partir d’iCloud, j’ai réussi à récupérer toute ma sauvegarde donc mes contacts, applications... mais pas mes photos 😭 #iPhone",APPS_MEDIA,no,,auto_provisional
+1628937,every time I stop a minute to see a video on youtube/facebook/everywhere this happens,APPS_MEDIA,no,,auto_provisional
+701629,"hi, I updated to 11.1 2 and now videos won’t play in any of my apps. YouTube, Twitter, facebook, instagram. Nada. 😐",APPS_MEDIA,no,,auto_provisional
+94841,I submitted a video podcast show to iTunes and approved. Can’t submit the audio version though “Can’t submit your feed. Your feed was previously submitted” - that’s the video version not audio. How do I go about this?,APPS_MEDIA,no,,auto_provisional
+145242,why can't I add music from my computer (w/ itunes) to my iphone with Apple Music on ?,APPS_MEDIA,no,,auto_provisional
+359833,why can’t my family see my iTunes music purchase on family sharing? I don’t want/have Apple Music just normal iTunes.,APPS_MEDIA,no,,auto_provisional
+123071,why does all my music from download cards from the records I️ buy disappear from my iTunes after a couple months!? swan city vultures southeastern ultra mega ok...gone. That’s some #shadymoneygrubbingbullshit .,APPS_MEDIA,no,,auto_provisional
+1625407,I bought apple music and now I can't add/delete my itunes music folders onto my iphone. What's the deal?,APPS_MEDIA,no,,auto_provisional
+514819,"There's this bug I've been constantly having and like.. the sound stops working for every app I have except for the following which I know of that the sound works on: YouTube, Facebook, Instagram. Can you take a look at that? Thanks",APPS_MEDIA,no,,auto_provisional
+90691,This is what I currently have.The free storage amount keeps changing?I have added no other apps or photos or videos.,APPS_MEDIA,no,,auto_provisional
+250083,when I go to purchase Apple Music I put in my password and says I cannot connect to iTunes Store,APPS_MEDIA,no,,auto_provisional
+1833833,your itunes application is a piece of trash. Wiped my music when plugged in to charge ipod. From iPod and itunes library,APPS_MEDIA,no,,auto_provisional
+506481,Any idea why my iOS Music app stops loading my music library (via Home Sharing) at around 75%? And why my iTunes can’t be pointed to my Airplay stereo via the Remote app?,APPS_MEDIA,no,,auto_provisional
+391721,👏🏼👍🏼 Thank you so much. I gotta say it’s a weird place to put it when there’s an existing ‘display and brightness’ section!,DISPLAY_AUDIO_CAMERA,no,,auto_provisional
+1001129,"my iPhone 7 Plus doesn’t work properly with 11.0.3 😡😡. The speaker doesn’t work on calls, is non responsive & screen locks!!",DISPLAY_AUDIO_CAMERA,no,,auto_provisional
+501463,"Thank you, but the brightness level still changes on its own. Even now as I’m typing this, the screen got darker. In the past there was a switch to turn this off, but I can’t find it now.",DISPLAY_AUDIO_CAMERA,no,,auto_provisional
+2838618,front and back camera are displaying a black screen and the flash/ flashlight won’t work at all.,DISPLAY_AUDIO_CAMERA,no,,auto_provisional
+2834354,I don’t know if it’s a known issue but on my iPhone 8 Plus if I turn the media volume all the way down you can still hear the audio faintly through the upper speaker on any app,DISPLAY_AUDIO_CAMERA,no,,auto_provisional
+2680189,nothing doing at all ... just finish updating and suddenly screen has gone !!! even i did not get tym to take my backup!!!! ... and there is no sound!!! and one more problme we are facing which is camera problem!!!!,DISPLAY_AUDIO_CAMERA,no,,auto_provisional
+850678,Yes. Also noticed the screen display in safari is now glitchy. Things don’t fit in the screen right. And everything is now slower.,DISPLAY_AUDIO_CAMERA,no,,auto_provisional
+1442850,"updated #11.03 still #speaker #volumeindication not able to hear while calling, home screen music error and many more #Apple help",DISPLAY_AUDIO_CAMERA,no,,auto_provisional
+1078271,Volume works. Just not displayed. This isn't in any app. It's in the system. I can be on the home screen or lock screen or anything.,DISPLAY_AUDIO_CAMERA,no,,auto_provisional
+501489,Version 11.1.2 No error message. It just froze after I opened camera app and wouldn’t respond when I touched the screen at all.,DISPLAY_AUDIO_CAMERA,no,,auto_provisional
+2478997,"Hi, after last iOS 11 update,I have issue with volume. When Im on Home screen,I raise or low multimedia volume. When I go into settings - sound, I can raise/low ring volume.",DISPLAY_AUDIO_CAMERA,no,,auto_provisional
+41544,"The same issues, the audio on the screen recording doesn’t work, it freezes constantly & none of my photos & videos are back on my phone. +",DISPLAY_AUDIO_CAMERA,no,,auto_provisional
+803110,Ever since that update my phone sound (calls and speakerphone) doesn't allow me to hear at all & my camera won't pull up 😠😠😠,DISPLAY_AUDIO_CAMERA,no,,auto_provisional
+300109,Also my volume button changes the volume by the on screen volume bar doesn’t move. Apps crash a lot.,DISPLAY_AUDIO_CAMERA,no,,auto_provisional
+390095,"I had restarted my phone, 3rd time in 5 days as it also fails to display Spotify controls in the control centre or lock screen despite....",DISPLAY_AUDIO_CAMERA,no,,auto_provisional
+325917,And some apps I try to screen record the audio doesn’t be in the video once it saves to camera roll either,DISPLAY_AUDIO_CAMERA,no,,auto_provisional
+2341887,my iPhone X front speaker sounds like it’s screaming out its lungs when I’m playing music at full volume (crackling vibration) since the first day. On iOS 11.1.1. Any advise?,DISPLAY_AUDIO_CAMERA,no,,auto_provisional
+2500897,"So, and the is warning me that I can’t get a refund when I press buy and something about 14 days... Does this mean I can get a refund Before buying the app? Idiotic system. Lack of refund is a major problem in the App Store.",PURCHASE_PAYMENT,no,,auto_provisional
+2666282,"After first receiving a message saying ""We are unable to process your request at this time. Try again later."", I now have a message saying ""This purchase is not eligible for a refund."" I am very unhappy that we've paid 33€ for a picture of a cartoon mammoth :(",PURCHASE_PAYMENT,no,,auto_provisional
+1474845,"hi, I had money removed from my account only for my payment method to be declined later and no purchase. Refund please.",PURCHASE_PAYMENT,no,,auto_provisional
+878879,iTunes won’t use my available credit as payment anymore. Wants credit card for purchases.,PURCHASE_PAYMENT,no,,auto_provisional
+632094,"Any reason why my iTunes payment method (credit card) gets rejected for some subscriptions and in-app purchases, but works fine for others within the same app?",PURCHASE_PAYMENT,no,,auto_provisional
+2955452,can I add company name to my billing address for my personal Apple ID? Sometimes I buy software that I use at my company (self-employed). Would love to get VAT invoices for those particular orders (like recent Pro purchase). 😀,PURCHASE_PAYMENT,no,,auto_provisional
+2303120,"My kids are old enough to have that freedom, but I wont let them purchase paid apps at will given how games entice kids to buy game currency",PURCHASE_PAYMENT,no,,auto_provisional
+2700983,"they said they refunded me but i’ve had this email, does this mean they’ve charged me again?!?",PURCHASE_PAYMENT,no,,auto_provisional
+2342893,I’ve been charged twice after amending my subscription email how do I get refunded?,PURCHASE_PAYMENT,no,,auto_provisional
+2618238,unrecognised charge on card... can someone tell me what it is... no purchases made,PURCHASE_PAYMENT,no,,auto_provisional
+655861,I jst saw a transaction made on my credit card from an iTunes purchase of $10.81 and another of $1.07 I didn’t buy nothing.,PURCHASE_PAYMENT,no,,auto_provisional
+2944486,YOU CHARGED MY ACCOUNT FOR $50 WORTH OF STUFF I NEVER PURCHASED . GIVE ME MY MONEY BACK !!!!!!!,PURCHASE_PAYMENT,no,,auto_provisional
+1083277,Hi How do I get a refund? I purchase a recharge gem at but it never went through and the amount has been ...,PURCHASE_PAYMENT,no,,auto_provisional
+2299193,I’ve been charged almost £200 for a subscription renual for an app I did not authorise... I’ve had to call my bank and stop further payments! Can you contact me immediately!!! - Paige.,PURCHASE_PAYMENT,no,,auto_provisional
+2246693,My phone was sitting off the charger all night and went from 99% to 52%. Ok why is the battery dying like this after the iOS 11 update.,BATTERY_POWER,no,,auto_provisional
+332490,"#ios11 battery drain issue is horrific, my iphone 7 is draining fast even on low power mode. #iphonebatterydrain",BATTERY_POWER,no,,auto_provisional
+428356,Basic guys! Basic! iOS 11.0.2 is draining the battery even while charging. Why? Battery life is the most important thing.,BATTERY_POWER,no,,auto_provisional
+50073,What did i wrong? Any version of ios 11 drains my battery. I have to charge It twice a day. Apple please....,BATTERY_POWER,no,,auto_provisional
+2076301,"Hey , when are you gonna fix the battery draining issue from the new update? My phone is dying faster than it’s charging 🙄",BATTERY_POWER,no,,auto_provisional
+2276283,"I trusted you and updated my phone to 11 v. After that my phone is start heating up and the battery draining, then I used to change the power IC which fixed the issue but after my phone GPS and the touch ID stopped working. Do I used to own your faults??",BATTERY_POWER,no,,auto_provisional
+2932167,It’s super awesome that the iOS update frl@ to fix the I glitch drains my battery. Phone has been off the charger for 2 hours and I’m down to 67%. In other news being able to write long drawn out rambling tweets is neat.,BATTERY_POWER,no,,auto_provisional
+484494,"Dear , can you shed any light on this please? Since updating iOS I can’t switch my phone on without a charger: even when it had nearly half of battery life, it says it’s drained. SE, 18 months old, no other changes, app refresh off.",BATTERY_POWER,no,,auto_provisional
+2207592,Hey can we make an update to where my phone doesn't drain battery for no apparent reason. Its been on the charger too.,BATTERY_POWER,no,,auto_provisional
