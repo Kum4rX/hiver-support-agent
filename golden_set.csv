@@ -1,0 +1,12 @@
+tweet_id,customer_text,intent,escalation,escalation_reason,label_source
+2911734,iOS 11.1.2 draining battery life. Last almost a day from full charge. Half as long when compared to previous iOS. Please sort.,BATTERY_POWER,no,,human
+2942126,Because nowadays we pay $800+ for phones to last us 2 years. There's so many battery issues and now it's charging without a charger.,BATTERY_POWER,no,,human
+2485674,"what is the official recommendation for leaving an iPhone X on a wireless charging pad (like in a desk set up) for extended periods of time? Is it bad for the battery to be constantly topped off, or is charger/phone smart? Looking at the Mophie in the Apple Store.",BATTERY_POWER,no,,human
+2121055,11.0.3 giving me feeling like i'm using android phone..battery draining too fast as compared to ios 10.3.3. gets hot when put on charge. IOS 10.3.3 was best according to me. using iphone se,BATTERY_POWER,no,,human
+2425815,"My computer charger doesn't work very well (the cord was chewed by my cat) only works if the cord is held at a specific angle, and if it disconnects my computer just shuts off. But I can turn it back on and it's capable of running on battery power for a few hours. whyyyyyy",DEVICE_PERFORMANCE,no,,human
+2812628,"I have a problem with the iPhone X battery, when I charge it .. Charging for very little time. What is the solution?",BATTERY_POWER,no,,human
+2680020,My iPhone takes forever to charge but the battery dies within an hour or 2?,BATTERY_POWER,no,,human
+2147785,when getting a new iphone what is the best thing to do for the battery? use it till it fully dies than full charge or charge fully before use? or?,BATTERY_POWER,no,,human
+1829193,"charged my iPhone around 12:30am with 35% woke up this morning, DRAINED MY BATTERY INSTEAD OF CHARGING IT!! #FixThisASAP",BATTERY_POWER,no,,human
+553474,"Not what was wrong. I reset phone, holding power and volume, more than 3 times. Then my phone went from 100% battery to 10% & dying in 3hrs. I didn’t plug charger letting it drain. Plugged in charger, it started charging and now it’s not locking me out",BATTERY_POWER,no,,human
+146683,"IOS 11.1.2 battery draining is shitting on me. My iPhone 6S’ battery literally goes from 70% to 30% in minutes, and to make it worse, it takes over 4 hours to fully charge.",BATTERY_POWER,no,,human
