@@ -76,11 +76,11 @@ def run_full_evaluation_suite():
         print(f"{'FAISS Retrieval Latency':<32} | {'Mean Search Time':<24} | {retrieval_results['mean_latency_ms']:.2f} ms")
 
     # Response & Guardrails
-    if response_results:
         print(f"{'Twitter Length Guardrail':<32} | {'Compliance (<=280 chars)':<24} | {response_results['length_compliance_rate']*100:.1f}%")
         print(f"{'PII Privacy Guardrail':<32} | {'Compliance Rate':<24} | {response_results['pii_compliance_rate']*100:.1f}%")
         print(f"{'Actionable Quality Check':<32} | {'Deterministic Pass Rate':<24} | {response_results['actionable_quality_rate']*100:.1f}%")
-        print(f"{'LLM-as-a-Judge Quality':<32} | {'Model Score':<24} | NOT MEASURED")
+        print(f"{'LLM-as-a-Judge Quality':<32} | {'Model Score':<24} | NOT MEASURED (Optional)")
+        print(f"{'Judge-Human Agreement':<32} | {'Agreement Metric':<24} | NOT MEASURED (No human ratings)")
         print(f"{'Response Character Length':<32} | {'Average Length':<24} | {response_results['avg_response_length_chars']} chars")
         print(f"{'End-to-End Pipeline Latency':<32} | {'Mean Latency':<24} | {response_results['mean_latency_ms']:.2f} ms")
 

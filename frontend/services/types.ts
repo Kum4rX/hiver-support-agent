@@ -116,6 +116,7 @@ export interface GuardrailEvaluationMetrics {
   pii_safety: number;
   actionable_quality: number;
   llm_as_a_judge: string;
+  judge_human_agreement?: string;
 }
 
 export interface EvaluationResponse {

@@ -343,8 +343,24 @@ hiver-support-agent/
 | **Twitter Guardrail** | Length Compliance | **100.0%** | $\le 280$ characters |
 | **Privacy Guardrail** | PII Safety | **100.0%** | No public credential solicitation |
 | **Actionable Quality Check** | Deterministic Pass Rate | **57.1%** | Concrete troubleshooting vocabulary presence |
-| **LLM-as-a-Judge Quality** | Model Score | **NOT MEASURED** | Explicitly omitted (No external LLM configured) |
+| **LLM-as-a-Judge Quality** | 6-Dimension Rubric Score | **NOT MEASURED** | Optional; requires `LLM_JUDGE_API_KEY` |
+| **Judge-Human Agreement** | Weighted Cohen's Kappa | **NOT MEASURED** | No independent human reply-quality ratings in dataset |
 | **End-to-End Pipeline** | Mean Total Latency | **225.37 ms** | Complete pipeline execution |
+
+---
+
+## Optional LLM-as-a-Judge Evaluation
+
+The evaluation harness includes an automated LLM-as-a-judge quality rubric in `src/evaluation/llm_judge.py` evaluating replies across 6 dimensions: **Groundedness**, **Relevance**, **Actionability**, **Safety**, **Tone**, and **Policy Constraints** (1–5 scale).
+
+- **Core Pipeline is 100% Offline**: The agent pipeline does NOT depend on an external LLM or API key.
+- **Evaluation-Only Component**: To run the optional LLM judge:
+  ```bash
+  export LLM_JUDGE_API_KEY="your-api-key"
+  python src/evaluation/llm_judge.py
+  ```
+- **Unconfigured Default**: Without `LLM_JUDGE_API_KEY`, the harness reports **"Not measured"** — no fake or synthetic judge scores are ever generated.
+- **Judge-Human Agreement**: The current verified Golden Set contains 11 samples with intent and escalation labels, but not independent human reply-quality ratings. A rating template has been generated at `data/human_response_quality_template.csv` for future human annotation; agreement metrics (quadratic weighted Cohen's Kappa & Spearman correlation) will compute automatically once human scores are provided.
 
 ---
 

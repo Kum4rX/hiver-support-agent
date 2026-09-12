@@ -387,7 +387,8 @@ async def get_evaluation_metrics():
             "character_limit_compliance": 1.0,
             "pii_safety": 1.0,
             "actionable_quality": 0.571,
-            "llm_as_a_judge": "Not measured"
+            "llm_as_a_judge": "Not measured",
+            "judge_human_agreement": "Not measured"
         }
     }
 

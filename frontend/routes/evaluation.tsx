@@ -243,7 +243,7 @@ export function EvaluationPage() {
         </p>
       </Panel>
 
-      <Panel title="Response guardrails" description="Post-generation checks applied to every reply">
+      <Panel title="Response quality & guardrails" description="Deterministic guardrails and optional LLM-as-a-judge rubric">
         <div className="space-y-4">
           <GuardrailRow
             label="Character Limit Compliance (≤280 characters)"
@@ -258,12 +258,17 @@ export function EvaluationPage() {
           <GuardrailRow
             label="Actionable Quality"
             value={guardrails.actionable_quality}
-            detail="Responses containing at least one concrete troubleshooting step"
+            detail="Deterministic check: responses containing at least one concrete troubleshooting step"
           />
           <GuardrailRow
-            label="LLM-as-a-Judge"
+            label="LLM-as-a-Judge (6-Dimension Rubric)"
             value={guardrails.llm_as_a_judge}
-            detail="No external LLM judge configured; evaluated purely via deterministic validation"
+            detail="Evaluates Groundedness, Relevance, Actionability, Safety, Tone (1–5 scale); requires LLM_JUDGE_API_KEY"
+          />
+          <GuardrailRow
+            label="Judge-Human Agreement"
+            value={guardrails.judge_human_agreement ?? "Not measured"}
+            detail="The current human Golden Set contains intent/escalation labels, not independent human reply-quality ratings"
           />
         </div>
       </Panel>

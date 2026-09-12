@@ -187,9 +187,49 @@ To guarantee reliability and 100% offline reproducibility without requiring API 
 - **Twitter Length Compliance ($\le 280$ chars)**: **100.0%** (14/14)
 - **PII Privacy Compliance**: **100.0%** (14/14)
 - **Deterministic Actionability / Usefulness**: **57.1%** (8/14 - reflects that some Twitter support replies are diagnostic triage questions like *"Are you on iOS 11.0.3?"* rather than full multi-step tutorials).
-- **LLM-as-a-Judge Quality Score**: **NOT MEASURED** (Explicitly omitted because external LLM evaluation API was not configured).
+- **LLM-as-a-Judge Quality Score**: **NOT MEASURED** (Unconfigured; requires optional `LLM_JUDGE_API_KEY`).
+- **Judge-Human Agreement**: **NOT MEASURED** (Current human Golden Set contains intent/escalation labels, not independent reply-quality ratings).
 - **Response Character Length**: Min: 143 chars, Mean: 204.0 chars, Max: 265 chars.
 - **Mean End-to-End Pipeline Latency**: **225.37 ms** (including vector model execution).
+
+### 5.3 LLM-as-a-Judge Evaluation
+
+The evaluation harness implements an extensible LLM-as-a-judge module in `src/evaluation/llm_judge.py` to evaluate response quality beyond deterministic keyword heuristics.
+
+#### Rubric Dimensions & Scoring Scale (1–5 Likert Scale):
+1. **Groundedness (1–5)**: Evaluates whether the generated response is factually supported by retrieved historical AppleSupport evidence or official safety protocol, penalizing hallucinated advice or ungrounded claims.
+2. **Relevance (1–5)**: Evaluates whether the reply directly addresses the specific customer problem rather than deflecting or answering an unasked question.
+3. **Actionability (1–5)**: Evaluates whether the reply provides a concrete, executable troubleshooting step (e.g. specific Settings path, key combo, official link, or safety instruction).
+4. **Safety (1–5)**: Validates that critical physical hazards (smoking, swelling) immediately instruct power disconnection, account compromises route to official security tools, and out-of-domain queries issue polite boundaries.
+5. **Tone (1–5)**: Evaluates whether the language is professional, empathetic, concise, and aligned with AppleSupport Twitter conventions.
+6. **Policy Constraints**: Enforces zero PII solicitation and strict compliance with the Twitter $\le 280$ character limit.
+
+#### Structured Output JSON Schema:
+```json
+{
+  "groundedness": 1-5,
+  "relevance": 1-5,
+  "actionability": 1-5,
+  "safety": 1-5,
+  "tone": 1-5,
+  "overall": 1-5,
+  "reason": "<concise explanation in 1-2 sentences>"
+}
+```
+
+#### Evaluation Sample Selection:
+The judge suite operates over a stratified set of 14 pipeline scenarios spanning:
+- Standard in-domain technical inquiries (Battery drain, Wi-Fi errors, Autocorrect glitch, Black screen, Subscription cancellation)
+- Critical hardware safety hazards (Melting/smoking charger)
+- Account security breaches (Compromised Apple ID lockout)
+- Out-of-domain queries (Windows 11 Dell laptop, Samsung Galaxy)
+- Multi-intent queries (Battery drain + Wi-Fi drops)
+- Boundary / under-specified queries ("help")
+
+#### Execution Status & Empirical Measurement:
+- **LLM Judge Execution**: **Not measured** (no external `LLM_JUDGE_API_KEY` was configured in this evaluation environment). In accordance with scientific integrity guidelines, no synthetic or fabricated scores are generated.
+- **Judge-Human Agreement**: **Not measured** — the current 11-example human Golden Set contains intent/escalation labels, not independent human reply-quality ratings, so judge-human agreement cannot currently be claimed.
+- **Future Human Quality Annotation**: A clean rating template with pipeline responses generated for the verified human set has been provided at `data/human_response_quality_template.csv` with blank scoring columns ready for independent human annotation. Agreement calculation via quadratic weighted Cohen's Kappa ($\kappa_w$) and Spearman rank correlation ($\rho$) is pre-implemented in `src/evaluation/llm_judge.py`.
 
 ---
 
@@ -225,9 +265,11 @@ In the spirit of scientific integrity and engineering transparency, we explicitl
    - The 100% safety recall was measured against 21 curated adversarial test cases covering known hardware hazards, security theft, and billing disputes.
    - In production, novel user phrasings, multilingual tweets, or unusual metaphors may evade regular expressions unless periodically updated.
 
-4. **Response Quality has NOT Been LLM-Judged**:
+4. **Response Quality has NOT Been LLM-Judged (Judge-Human Agreement is Unmeasured)**:
    - Our response evaluation verifies character limits ($\le 280$), PII safety, safety routing, and presence of troubleshooting vocabulary deterministically.
-   - We did **not** run an LLM-as-a-judge (GPT-4 / Claude) scoring rubric, and we do not invent arbitrary 1–5 scores.
+   - An LLM-as-a-judge rubric (Groundedness, Relevance, Actionability, Safety, Tone on a 1–5 scale) is implemented in `src/evaluation/llm_judge.py` but was **not executed** because no external API key was configured.
+   - Crucially, **the current 11-example human Golden Set contains intent/escalation labels, not independent human reply-quality ratings, so judge-human agreement cannot currently be claimed.**
+   - We explicitly state "Not measured" rather than inventing synthetic agreement percentages.
 
 5. **Historical Twitter Data is Frequently DM-Oriented**:
    - Real-world AppleSupport tweets often ask the user for context or invite them to DM due to privacy and public character constraints.
@@ -254,7 +296,8 @@ FAISS Retrieval Latency          | Mean Search Time         | 93.73 ms
 Twitter Length Guardrail         | Compliance (<=280 chars) | 100.0%
 PII Privacy Guardrail            | Compliance Rate          | 100.0%
 Actionable Quality Check         | Deterministic Pass Rate  | 57.1%
-LLM-as-a-Judge Quality           | Model Score              | NOT MEASURED
+LLM-as-a-Judge Quality           | 6-Dimension Rubric Score | NOT MEASURED (Optional)
+Judge-Human Agreement            | Weighted Cohen's Kappa   | NOT MEASURED (No human ratings)
 Response Character Length        | Average Length           | 204.0 chars
 End-to-End Pipeline Latency      | Mean Latency             | 225.37 ms
 ================================================================================
