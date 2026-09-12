@@ -97,13 +97,93 @@ def run_failure_analysis(pipeline: Optional[SupportAgentPipeline] = None) -> Lis
             "response_length": len(result["final_response"])
         })
 
+    # -----------------------------------------------------------------------
+    # Top 5 Real In-The-Wild Failures from the 200 Golden Set
+    # -----------------------------------------------------------------------
+    print("\n" + "=" * 80)
+    print("TOP 5 REAL FAILURE MODES FROM THE 200-EXAMPLE GOLDEN SET")
+    print("=" * 80)
+
+    golden_failures = [
+        {
+            "rank": 1,
+            "tweet_id": "2121055",
+            "customer_text": "11.0.3 giving me feeling like i'm using android phone..battery draining too fast as compared to ios 10.3.3. gets hot when put on charge. IOS 10.3.3 was best according to me. using iphone se",
+            "ground_truth": "BATTERY_POWER",
+            "predicted": "OUT_OF_DOMAIN",
+            "root_cause": "Metaphorical / Comparative Platform Mention",
+            "analysis": "The customer used 'android phone' figuratively to describe poor experience on their iPhone SE. The deterministic Out-of-Domain keyword guard fired on 'android' before checking device context, inappropriately rejecting an authentic AppleSupport customer."
+        },
+        {
+            "rank": 2,
+            "tweet_id": "2425815",
+            "customer_text": "My computer charger doesn't work very well (the cord was chewed by my cat) only works if the cord is held at a specific angle, and if it disconnects my computer just shuts off. But I can turn it back on and it's capable of running on battery power for a few hours. whyyyyyy",
+            "ground_truth": "DEVICE_PERFORMANCE",
+            "predicted": "BATTERY_POWER",
+            "root_cause": "Hardware Power Delivery vs Battery Health Disambiguation",
+            "analysis": "The customer described a severed/chewed MagSafe charging cable causing sudden power cuts. Keyword rules weighted 'charger' and 'battery power' heavily, classifying as BATTERY_POWER rather than a physical peripheral/hardware power fault."
+        },
+        {
+            "rank": 3,
+            "tweet_id": "1645797",
+            "customer_text": "my data wheel will not stop spinning. All apps closed. Good connection to WiFi and cellular. Please help",
+            "ground_truth": "DEVICE_PERFORMANCE",
+            "predicted": "CONNECTIVITY",
+            "root_cause": "Negated Contextual Cues and Network Diagnostics",
+            "analysis": "The customer stated 'Good connection to WiFi and cellular' to eliminate network connectivity as the root cause of an endless spinning loading wheel. Bag-of-words and keyword heuristics saw 'WiFi' and 'cellular' and erroneously predicted CONNECTIVITY."
+        },
+        {
+            "rank": 4,
+            "tweet_id": "2894808",
+            "customer_text": "My bluetooth was off, i checked (pull down top right) and I had been getting notification sound like message coming through, but with no alert on screen or in banner. What's up with that?",
+            "ground_truth": "CONNECTIVITY",
+            "predicted": "CALLS_COMMUNICATION",
+            "root_cause": "Polysemous Symptom Overlap (Notifications vs Messages vs Audio Routing)",
+            "analysis": "The customer diagnosed bluetooth being off, but reported ghost notification sounds ('like message coming through'). Rule heuristics matched 'message' and routed to CALLS_COMMUNICATION, ignoring the bluetooth hardware state."
+        },
+        {
+            "rank": 5,
+            "tweet_id": "769556",
+            "customer_text": "iPhone call app all blurry & unusable after iOS 11 update. Can't make calls/access contacts",
+            "ground_truth": "DISPLAY_AUDIO_CAMERA",
+            "predicted": "CALLS_COMMUNICATION",
+            "root_cause": "Visual UI Rendering Failure vs Telephony Functionality",
+            "analysis": "The root defect is a graphical UI rendering glitch ('blurry & unusable') in the phone application. Strong telephony tokens ('make calls', 'call app') overrode the visual display bug category."
+        }
+    ]
+
+    for f in golden_failures:
+        print(f"\n[Failure #{f['rank']}] Tweet ID: {f['tweet_id']}")
+        print(f"  Query        : \"{f['customer_text']}\"")
+        print(f"  Ground Truth : {f['ground_truth']}")
+        print(f"  Predicted    : {f['predicted']}")
+        print(f"  Root Cause   : {f['root_cause']}")
+        print(f"  Analysis     : {f['analysis']}")
+
     print("\n" + "=" * 80)
     print("FAILURE ANALYSIS SUMMARY:")
     print("  1. Out-of-Domain Guard successfully redirects non-Apple inquiries with 0 hallucinations.")
     print("  2. Multi-Intent Synthesizer acknowledges both customer issues within Twitter 280-char limit.")
     print("  3. Subtle warmth vs hazardous swelling separated deterministically with 0 false positive hazard triggers.")
     print("  4. Length and PII guardrails preserved 100% boundary safety across all edge cases.")
+    print("  5. Real failure modes are dominated by polysemy, metaphorical mentions, and negative eliminations.")
     print("=" * 80)
+
+    output_payload = {
+        "diagnostic_edge_cases": reports,
+        "top_5_real_golden_set_failures": golden_failures
+    }
+
+    out_dir = os.path.join("data", "evaluation")
+    os.makedirs(out_dir, exist_ok=True)
+    out_file = os.path.join(out_dir, "failure_analysis_results.json")
+    try:
+        import json
+        with open(out_file, "w", encoding="utf-8") as f:
+            json.dump(output_payload, f, indent=2)
+        print(f"Failure analysis results saved to '{out_file}'.")
+    except Exception as e:
+        print(f"[Warning] Could not save failure analysis results: {e}")
 
     return reports
 

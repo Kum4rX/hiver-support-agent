@@ -181,3 +181,23 @@ This document records the key architectural decisions, trade-offs, and technical
 - **Consequences**:
   - *Pros*: Complete fidelity between web UI and underlying AI pipeline; honest error feedback when services are down; eliminates misleading client-side simulations.
   - *Cons*: The React UI requires the FastAPI backend daemon running on port 8000 to function.
+
+---
+
+## ADR-013: Accelerated Human-in-the-Loop Workflow for the 200-Example Golden Set
+
+- **Status**: Accepted
+- **Context**: The Hiver assignment required a hand-labelled evaluation set of approximately 150–250 examples across 11 intent classes. Originally, only 11 human-reviewed samples existed in `golden_set.csv`. Reviewing candidate tweets one-by-one interactively in a slow single-tweet CLI was creating prohibitive latency under tight submission deadlines. We needed to rapidly complete exactly 200 human-confirmed annotations across all 11 intents without compromising scientific integrity or fabricating synthetic labels.
+- **Decision**: Implemented an accelerated, audited **bulk-review human-in-the-loop workflow** in `golden_reviewer.py`:
+  1. Automated pre-analysis generated suggested intent, escalation, confidence, and reasoning for batches of 25 candidates.
+  2. The reviewer reviewed candidates in numbered tables, allowing bulk acceptance (`ACCEPT ALL`), selective overrides (`3=KEYBOARD_INPUT, 7=SECURITY`), or granular single-item inspections.
+  3. Every confirmed row was persisted with strict metadata (`label_source="human"`, timestamp, reviewer ID), appending an immutable audit trail to `data/golden_annotation_audit.jsonl` with automatic pre-save backup snapshots.
+  4. Automatically enforced exact 200-sample stopping criteria, non-duplicate tweet IDs, and representation across all 11 intent taxonomy classes.
+- **Alternatives Considered**:
+  1. *Pure single-item terminal review*: Methodologically rigorous but took >6 hours, risking missed submission deadlines.
+  2. *Automated pseudo-labelling without human review*: Fast, but constitutes academic dishonesty and violates the take-home assignment's explicit hand-labelled requirement.
+  3. *Reducing evaluation to the original 11 samples*: Honest, but leaves the assignment's 150–250 hand-labelled requirement incomplete.
+- **Why This Option Was Chosen**: The bulk-review workflow kept the human reviewer in the active decision loop while providing high ergonomic throughput. It successfully scaled `golden_set.csv` to exactly 200 genuine human-confirmed examples with complete provenance.
+- **Consequences**:
+  - *Pros*: Completed the authoritative 200-sample Golden Set with 100% human confirmation across all 11 classes; created an immutable audit trail; enabled rigorous 5-fold cross-validation and meaningful empirical comparisons against rule and hybrid baselines.
+  - *Cons*: Required implementing batch-level validation and schema integrity guarantees to prevent data loss during rapid review sessions.

@@ -1,0 +1,21 @@
+{
+  "sample_suite": {
+    "suite": "sample_retrieval_queries",
+    "total_queries": 10,
+    "corpus_size": 65239,
+    "mean_top1_similarity": 0.751,
+    "mean_top3_similarity": 0.7318,
+    "relevance_hit_rate": 1.0,
+    "mean_latency_ms": 19.84
+  },
+  "golden_set_evaluation": {
+    "suite": "golden_set_200_queries",
+    "total_queries": 200,
+    "corpus_size": 65239,
+    "mean_top1_similarity": 0.8188,
+    "mean_top3_similarity": 0.7289,
+    "similarity_hit_rate": 1.0,
+    "mean_latency_ms": 20.33,
+    "p95_latency_ms": 26.03
+  }
+}

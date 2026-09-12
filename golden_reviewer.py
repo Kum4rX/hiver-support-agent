@@ -35,6 +35,7 @@ CLEAN_PAIRS_FILE = os.path.join("data", "apple_support_pairs_clean.csv")
 SKIPPED_FILE = os.path.join("data", "golden_skipped.csv")
 SUMMARY_FILE = os.path.join("data", "golden_set_summary.json")
 AUDIT_LOG_FILE = os.path.join("data", "golden_annotation_audit.jsonl")
+BACKUP_BEFORE_BULK_FILE = "golden_set_backup_before_bulk.csv"
 
 INTENTS = [
     "BATTERY_POWER",
@@ -388,15 +389,55 @@ def verify_schema(filepath: str = GOLDEN_SET_FILE) -> bool:
             print(f"[FAIL] Found invalid escalation values: {invalid_esc['escalation'].unique()}")
             return False
 
-        # Check duplicates
+        # Check duplicate tweet IDs
         dup_ids = df[df.duplicated(subset=["tweet_id"], keep=False)]
         if not dup_ids.empty:
             print(f"[FAIL] Found duplicate tweet IDs: {dup_ids['tweet_id'].tolist()}")
             return False
 
+        # Check duplicate normalized text
+        norm_texts = df["customer_text"].apply(normalize_text_for_dedup)
+        dup_text_mask = norm_texts.duplicated(keep=False)
+        if dup_text_mask.any():
+            dup_texts = df.loc[dup_text_mask, "customer_text"].tolist()
+            print(f"[FAIL] Found duplicate normalized customer texts: {dup_texts[:3]} (total duplicates: {dup_text_mask.sum()})")
+            return False
+
+        # Check preservation of pre-existing human labels from backup if present
+        if os.path.exists(BACKUP_BEFORE_BULK_FILE) and filepath == GOLDEN_SET_FILE:
+            try:
+                df_bk = pd.read_csv(BACKUP_BEFORE_BULK_FILE)
+                bk_id_map = dict(zip(df_bk["tweet_id"].astype(str).str.strip(), df_bk["intent"].astype(str).str.strip()))
+                bk_esc_map = dict(zip(df_bk["tweet_id"].astype(str).str.strip(), df_bk["escalation"].astype(str).str.strip()))
+                current_id_map = dict(zip(df["tweet_id"].astype(str).str.strip(), df["intent"].astype(str).str.strip()))
+                current_esc_map = dict(zip(df["tweet_id"].astype(str).str.strip(), df["escalation"].astype(str).str.strip()))
+
+                missing_bk = [tid for tid in bk_id_map if tid not in current_id_map]
+                if missing_bk:
+                    print(f"[FAIL] Pre-existing human label(s) missing from {filepath}: {missing_bk}")
+                    return False
+
+                mismatched_bk = [tid for tid in bk_id_map if bk_id_map[tid] != current_id_map.get(tid)]
+                if mismatched_bk:
+                    print(f"[FAIL] Pre-existing human label intent modified for: {mismatched_bk}")
+                    return False
+
+                mismatched_esc = [tid for tid in bk_esc_map if bk_esc_map[tid] != current_esc_map.get(tid)]
+                if mismatched_esc:
+                    print(f"[FAIL] Pre-existing human label escalation modified for: {mismatched_esc}")
+                    return False
+
+                print(f"[PASS] Preserved all {len(df_bk)} pre-existing human-labelled rows exactly intact.")
+            except Exception as e:
+                print(f"[Warning] Could not verify backup preservation: {e}")
+
     print(f"[PASS] All schema and data integrity checks passed.")
-    print(f"Total rows: {len(df)} / {TARGET_COUNT}")
+    if len(df) == TARGET_COUNT:
+        print(f"[PASS] Target count verified: exactly {TARGET_COUNT} human-confirmed examples!")
+    else:
+        print(f"[PROGRESS] Current count: {len(df)} / {TARGET_COUNT} human-confirmed examples ({TARGET_COUNT - len(df)} remaining to complete).")
     return True
+
 
 
 def print_status(filepath: str = GOLDEN_SET_FILE) -> None:
@@ -649,8 +690,321 @@ def run_interactive_annotation(
     print_status(filepath)
 
 
+def analyze_candidate(candidate: Dict[str, Any], classifier=None) -> Dict[str, Any]:
+    """Analyze a single candidate to produce suggested intent, escalation, confidence, and compact reason."""
+    text = str(candidate.get("customer_text", "")).strip()
+    tid = str(candidate.get("tweet_id", "")).strip()
+
+    # 1. Suggested Intent
+    suggested_intent = candidate.get("suggested_intent")
+    confidence = "HIGH"
+    if not suggested_intent or suggested_intent not in INTENTS:
+        if classifier:
+            try:
+                suggested_intent = classifier.predict(text)
+                confidence = "HIGH"
+            except Exception:
+                suggested_intent = "HOW_TO_OTHER"
+                confidence = "LOW"
+        else:
+            suggested_intent = "HOW_TO_OTHER"
+            confidence = "LOW"
+
+    # 2. Suggested Escalation
+    text_lower = text.lower()
+    hazard_words = ["swell", "swollen", "bulg", "fire", "smoke", "burn", "spark", "shock", "explod", "melt"]
+    security_words = ["hacked", "stolen", "unauthorized", "phishing", "fraud", "stole", "compromised", "lockout"]
+    legal_words = ["lawyer", "attorney", "lawsuit", "police", "legal action", "court"]
+
+    is_escalated = "no"
+    escalation_reason = ""
+    if any(kw in text_lower for kw in hazard_words):
+        is_escalated = "yes"
+        escalation_reason = "PHYSICAL_SAFETY_HAZARD"
+    elif any(kw in text_lower for kw in security_words):
+        is_escalated = "yes"
+        escalation_reason = "ACCOUNT_SECURITY_RISK"
+    elif any(kw in text_lower for kw in legal_words):
+        is_escalated = "yes"
+        escalation_reason = "LEGAL_DISPUTE"
+
+    # 3. Compact Reason / Summary
+    clean_summary = re.sub(r"\s+", " ", text).strip()
+    clean_summary = re.sub(r"^(@\w+\s*)+", "", clean_summary).strip()
+    if len(clean_summary) > 55:
+        clean_summary = clean_summary[:52] + "..."
+
+    return {
+        "tweet_id": tid,
+        "customer_text": text,
+        "suggested_intent": suggested_intent,
+        "suggested_escalation": is_escalated,
+        "suggested_escalation_reason": escalation_reason,
+        "confidence": confidence,
+        "short_reason": clean_summary,
+        "source": candidate.get("source", "candidate_pool")
+    }
+
+
+def run_bulk_review(
+    target: int = TARGET_COUNT,
+    batch_size: int = 25,
+    filepath: str = GOLDEN_SET_FILE,
+    reviewer_id: str = "human_reviewer"
+) -> None:
+    """Run fast bulk human-in-the-loop review workflow in batches."""
+    print("\n" + "=" * 90)
+    print(f"STARTING BULK HUMAN-IN-THE-LOOP REVIEW WORKFLOW (Target: {target} | Batch Size: {batch_size})")
+    print(f"Active Reviewer ID: {reviewer_id}")
+    print("=" * 90)
+
+    golden_df = load_or_init_golden_set(filepath)
+    skipped_df, skipped_ids, skipped_texts = load_skipped_ids()
+
+    reviewed_ids = set(golden_df["tweet_id"].astype(str).str.strip())
+    reviewed_texts = {normalize_text_for_dedup(t) for t in golden_df["customer_text"].dropna()}
+
+    print(f"Loaded {len(golden_df)} previously confirmed human examples.")
+    print(f"Loaded {len(skipped_ids)} previously skipped examples.")
+
+    if len(golden_df) >= target:
+        print(f"\n[Target Reached] Already have {len(golden_df)} / {target} human-confirmed examples!")
+        print_status(filepath)
+        return
+
+    # Load keyword classifier if available for fallback suggestion refinement
+    clf = None
+    try:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from src.models.intent_classifier import KeywordRuleIntentClassifier
+        clf = KeywordRuleIntentClassifier()
+    except Exception:
+        pass
+
+    candidates = load_candidate_pool(reviewed_ids, reviewed_texts, skipped_ids, skipped_texts)
+    print(f"Available unreviewed candidates: {len(candidates)}")
+
+    if not candidates:
+        print("[Notice] No candidates available for bulk review.")
+        return
+
+    # Sort candidates dynamically to balance classes across the 11 intents
+    intent_counts = golden_df["intent"].value_counts().to_dict() if not golden_df.empty else {}
+    candidates.sort(key=lambda c: intent_counts.get(c["suggested_intent"], 0))
+
+    batch_number = 0
+
+    while len(golden_df) < target and candidates:
+        batch_number += 1
+        needed = target - len(golden_df)
+        cur_batch_size = min(batch_size, needed, len(candidates))
+        raw_batch = candidates[:cur_batch_size]
+        candidates = candidates[cur_batch_size:]
+
+        # Analyze candidates in current batch
+        batch = [analyze_candidate(c, classifier=clf) for c in raw_batch]
+
+        start_num = len(golden_df) + 1
+        end_num = len(golden_df) + len(batch)
+
+        def print_batch_table(current_batch: List[Dict[str, Any]]):
+            print("\n" + "=" * 105)
+            print(f"Human confirmed: {len(golden_df)} / {target}")
+            print(f"Remaining: {target - len(golden_df)}")
+            print(f"Current batch: #{start_num}-#{end_num} ({len(current_batch)} candidates)")
+            print("=" * 105)
+            print("INTENT TAXONOMY REFERENCE:")
+            print("  [1] BATTERY_POWER        [2] CONNECTIVITY         [3] CALLS_COMMUNICATION")
+            print("  [4] DEVICE_PERFORMANCE   [5] KEYBOARD_INPUT       [6] APPS_MEDIA")
+            print("  [7] DISPLAY_AUDIO_CAMERA [8] ACCOUNT_ICLOUD       [9] PURCHASE_PAYMENT")
+            print("  [10] HOW_TO_OTHER        [11] SECURITY")
+            print("-" * 105)
+            print(f" {'#':<5} | {'INTENT':<22} | {'ESCALATION':<11} | {'CONF':<6} | {'CUSTOMER TWEET PREVIEW'}")
+            print("-" * 105)
+            for idx, item in enumerate(current_batch):
+                rnum = start_num + idx
+                sugg_intent = item["suggested_intent"]
+                esc_str = "YES" if item["suggested_escalation"] == "yes" else "NO"
+                if item["suggested_escalation"] == "yes" and item.get("suggested_escalation_reason"):
+                    esc_str = f"YES:{item['suggested_escalation_reason'][:6]}"
+                conf = item["confidence"]
+                reason = item["short_reason"]
+                print(f" #{rnum:<4} | {sugg_intent:<22} | {esc_str:<11} | {conf:<6} | {reason}")
+            print("-" * 105)
+
+        print_batch_table(batch)
+
+        # Batch human confirmation loop
+        while True:
+            print("\n==================================================")
+            print("BATCH HUMAN CONFIRMATION")
+            print("==================================================")
+            print("[A] ACCEPT ALL displayed suggestions as HUMAN REVIEWED")
+            print("[C] CHANGE selected rows (e.g. '19 2', '20 4', '21 8E')")
+            print("[R] REVIEW rows individually")
+            print("[S] SKIP batch")
+            print("[Q] SAVE & EXIT")
+            print("==================================================")
+
+            user_action = input(f"Reviewer [{reviewer_id}] Batch Action [A/C/R/S/Q]: ").strip().lower()
+
+            if user_action in ["a", "accept", "y"]:
+                # ACCEPT ALL: Explicit human action
+                print(f"\n[Human Action: ACCEPT ALL] Recording {len(batch)} candidates as label_source='human'...")
+                new_rows = []
+                for idx, item in enumerate(batch):
+                    tid = item["tweet_id"]
+                    text = item["customer_text"]
+                    norm_text = normalize_text_for_dedup(text)
+                    if tid in reviewed_ids or norm_text in reviewed_texts:
+                        continue
+
+                    row_dict = {
+                        "tweet_id": tid,
+                        "customer_text": text,
+                        "intent": item["suggested_intent"],
+                        "escalation": item["suggested_escalation"],
+                        "escalation_reason": item["suggested_escalation_reason"],
+                        "label_source": "human"
+                    }
+                    new_rows.append(row_dict)
+                    reviewed_ids.add(tid)
+                    reviewed_texts.add(norm_text)
+                    record_audit_log(
+                        reviewer_id=reviewer_id,
+                        tweet_id=tid,
+                        customer_text=text,
+                        suggested_intent=item["suggested_intent"],
+                        final_intent=item["suggested_intent"],
+                        action="bulk_accepted",
+                        escalation=item["suggested_escalation"],
+                        escalation_reason=item["suggested_escalation_reason"],
+                        label_source="human"
+                    )
+
+                if new_rows:
+                    df_append = pd.DataFrame(new_rows)[SCHEMA_COLUMNS]
+                    golden_df = pd.concat([golden_df, df_append], ignore_index=True)
+                    golden_df.to_csv(filepath, index=False)
+                    update_summary(golden_df)
+                print(f"[OK] Saved! Human confirmed total: {len(golden_df)} / {target}")
+                break  # Advance to next batch
+
+            elif user_action in ["c", "change"]:
+                print("\nEnter row changes (e.g. '19 2', '20 4', '21 8E').")
+                print("Format: <row_num> <intent_num(1-11)>[E]")
+                print("You can enter multiple modifications separated by commas or on separate lines.")
+                print("Press Enter on an empty line when done modifying.")
+
+                while True:
+                    chg_input = input("Change row(s) [or Enter when done]: ").strip()
+                    if not chg_input:
+                        break
+
+                    pattern = r"#?(\d+)\s+([1-9]|1[01])\s*(e)?"
+                    matches = list(re.finditer(pattern, chg_input, re.IGNORECASE))
+                    if not matches:
+                        print(f"Could not parse modification '{chg_input}'. Expected format: '<row_num> <intent_num>' (e.g. '19 2' or '21 8E')")
+                        continue
+
+                    for m in matches:
+                        row_target = int(m.group(1))
+                        intent_idx = int(m.group(2))
+                        has_esc = bool(m.group(3))
+
+                        offset = row_target - start_num
+                        if 0 <= offset < len(batch):
+                            chosen_intent = INTENTS[intent_idx - 1]
+                            batch[offset]["suggested_intent"] = chosen_intent
+                            if has_esc:
+                                batch[offset]["suggested_escalation"] = "yes"
+                                if not batch[offset]["suggested_escalation_reason"]:
+                                    batch[offset]["suggested_escalation_reason"] = "HUMAN_ESCALATION"
+                            else:
+                                batch[offset]["suggested_escalation"] = "no"
+                                batch[offset]["suggested_escalation_reason"] = ""
+                            print(f"-> Updated #{row_target} to INTENT: {chosen_intent} | ESCALATION: {batch[offset]['suggested_escalation'].upper()}")
+                        else:
+                            print(f"Row #{row_target} is outside current batch range (#{start_num}-#{end_num}).")
+
+                # Re-display updated batch table
+                print_batch_table(batch)
+
+            elif user_action in ["r", "review"]:
+                target_str = input(f"Enter row number(s) to review individually in #{start_num}-#{end_num} (or Enter for all): ").strip()
+                if not target_str:
+                    target_indices = list(range(len(batch)))
+                else:
+                    target_indices = []
+                    for tok in re.findall(r"\d+", target_str):
+                        rnum = int(tok)
+                        off = rnum - start_num
+                        if 0 <= off < len(batch):
+                            target_indices.append(off)
+                        else:
+                            print(f"Row #{rnum} outside batch range.")
+
+                for off in target_indices:
+                    item = batch[off]
+                    rnum = start_num + off
+                    print("\n" + "-" * 75)
+                    print(f"[Reviewing #{rnum}] Tweet ID: {item['tweet_id']}")
+                    print(f"CUSTOMER: \"{item['customer_text']}\"")
+                    print(f"CURRENT: >>> {item['suggested_intent']} <<< | Escalation: {item['suggested_escalation']}")
+                    print("Options: [Enter] keep, [1-11] change intent, [E] escalate, [1-11E] both:")
+                    u_in = input("Choice: ").strip().lower()
+                    if u_in and u_in.isdigit() and 1 <= int(u_in) <= len(INTENTS):
+                        item["suggested_intent"] = INTENTS[int(u_in) - 1]
+                    elif re.match(r"^(\d+)\s*e$", u_in):
+                        m = re.match(r"^(\d+)\s*e$", u_in)
+                        item["suggested_intent"] = INTENTS[int(m.group(1)) - 1]
+                        item["suggested_escalation"] = "yes"
+                        item["suggested_escalation_reason"] = "HUMAN_ESCALATION"
+                    elif u_in == "e":
+                        item["suggested_escalation"] = "yes"
+                        item["suggested_escalation_reason"] = "HUMAN_ESCALATION"
+
+                print_batch_table(batch)
+
+            elif user_action in ["s", "skip"]:
+                print(f"Skipping batch #{batch_number} ({len(batch)} candidates)...")
+                for item in batch:
+                    record_skipped_item(item["tweet_id"], item["customer_text"], "skipped_in_bulk")
+                    record_audit_log(
+                        reviewer_id=reviewer_id,
+                        tweet_id=item["tweet_id"],
+                        customer_text=item["customer_text"],
+                        suggested_intent=item["suggested_intent"],
+                        final_intent="",
+                        action="bulk_skipped",
+                        escalation="no",
+                        escalation_reason="skipped_in_bulk",
+                        label_source="skipped"
+                    )
+                    skipped_ids.add(str(item["tweet_id"]))
+                    skipped_texts.add(normalize_text_for_dedup(item["customer_text"]))
+                break  # Next batch
+
+            elif user_action in ["q", "quit", "exit"]:
+                print("\nSaving progress and exiting...")
+                update_summary(golden_df)
+                print_status(filepath)
+                return
+
+            else:
+                print("Invalid choice. Please enter 'A' to accept, 'C' to change, 'R' to review, 'S' to skip, or 'Q' to quit.")
+
+    print("\n" + "=" * 90)
+    if len(golden_df) >= target:
+        print(f"🎉 GOAL REACHED! Exactly {len(golden_df)} human-confirmed examples in '{filepath}'.")
+    else:
+        print(f"Bulk review ended. Total human confirmed: {len(golden_df)} / {target}.")
+    print("=" * 90)
+    print_status(filepath)
+
+
 def run_unit_test() -> bool:
-    """Automated test to verify review, resume, skip, audit, and schema logic without altering production data."""
+    """Automated test to verify review, resume, skip, audit, bulk review analysis, and schema logic without altering production data."""
     test_golden_file = os.path.join("data", "test_golden_set.csv")
     test_skipped_file = os.path.join("data", "test_golden_skipped.csv")
     test_summary_file = os.path.join("data", "test_golden_summary.json")
@@ -727,6 +1081,28 @@ def run_unit_test() -> bool:
     assert export_clean_golden_set(test_golden_file) is True
     print("[OK] Test 7 Passed: Export clean golden set passes.")
 
+    # Test 8: Candidate Analysis logic
+    sample_cand = {
+        "tweet_id": "T9999",
+        "customer_text": "Battery is swelling and smoking hot",
+        "suggested_intent": "BATTERY_POWER"
+    }
+    analysis = analyze_candidate(sample_cand)
+    assert analysis["suggested_intent"] == "BATTERY_POWER"
+    assert analysis["suggested_escalation"] == "yes"
+    assert analysis["suggested_escalation_reason"] == "PHYSICAL_SAFETY_HAZARD"
+    assert analysis["confidence"] == "HIGH"
+    print("[OK] Test 8 Passed: Candidate analysis correctly flags physical hazard escalation.")
+
+    # Test 9: Modification pattern regex parsing
+    pattern = r"#?(\d+)\s+([1-9]|1[01])\s*(e)?"
+    matches = list(re.finditer(pattern, "19 2, 20 4, 21 8E", re.IGNORECASE))
+    assert len(matches) == 3
+    assert int(matches[0].group(1)) == 19 and int(matches[0].group(2)) == 2 and not matches[0].group(3)
+    assert int(matches[1].group(1)) == 20 and int(matches[1].group(2)) == 4 and not matches[1].group(3)
+    assert int(matches[2].group(1)) == 21 and int(matches[2].group(2)) == 8 and bool(matches[2].group(3))
+    print("[OK] Test 9 Passed: Bulk modification parser parses multi-row modifications correctly.")
+
     # Clean up test artifacts
     for f in [test_golden_file, test_skipped_file, test_summary_file, test_audit_file]:
         if os.path.exists(f):
@@ -743,6 +1119,8 @@ if __name__ == "__main__":
     parser.add_argument("--verify-schema", action="store_true", help="Verify golden_set.csv schema integrity")
     parser.add_argument("--export-clean", action="store_true", help="Export and validate clean golden_set.csv")
     parser.add_argument("--test", action="store_true", help="Run automated test suite of the annotation workflow")
+    parser.add_argument("--bulk-review", action="store_true", help="Launch fast bulk human-in-the-loop review workflow")
+    parser.add_argument("--batch-size", type=int, default=25, help="Number of candidates per bulk review batch (default: 25)")
     parser.add_argument("--target", type=int, default=TARGET_COUNT, help=f"Target number of reviewed examples (default: {TARGET_COUNT})")
     parser.add_argument("--reviewer", type=str, default="human_reviewer", help="Reviewer ID for audit trail tracking")
     parser.add_argument("--file", type=str, default=GOLDEN_SET_FILE, help=f"Golden set output file (default: {GOLDEN_SET_FILE})")
@@ -757,5 +1135,7 @@ if __name__ == "__main__":
         export_clean_golden_set(args.file)
     elif args.status:
         print_status(args.file)
+    elif args.bulk_review:
+        run_bulk_review(target=args.target, batch_size=args.batch_size, filepath=args.file, reviewer_id=args.reviewer)
     else:
         run_interactive_annotation(target=args.target, filepath=args.file, reviewer_id=args.reviewer)

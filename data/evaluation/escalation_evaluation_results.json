@@ -1,0 +1,32 @@
+{
+  "curated_suite": {
+    "suite": "curated_hazard_tests",
+    "total_cases": 21,
+    "tp": 13,
+    "tn": 8,
+    "fp": 0,
+    "fn": 0,
+    "accuracy": 1.0,
+    "safety_recall": 1.0,
+    "precision": 1.0,
+    "specificity": 1.0,
+    "f1": 1.0,
+    "avg_latency_us": 18.95
+  },
+  "golden_set_evaluation": {
+    "suite": "golden_set_200_human",
+    "total_cases": 200,
+    "human_escalated": 21,
+    "human_non_escalated": 179,
+    "tp": 4,
+    "tn": 179,
+    "fp": 0,
+    "fn": 17,
+    "accuracy": 0.915,
+    "safety_recall": 0.1905,
+    "precision": 1.0,
+    "specificity": 1.0,
+    "f1": 0.32,
+    "avg_latency_us": 69.57
+  }
+}

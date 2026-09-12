@@ -1,0 +1,787 @@
+{
+  "status": "Measured",
+  "measured": true,
+  "judge_configured": true,
+  "provider": "gemini",
+  "model": "gemini-3.5-flash",
+  "sample_size": 27,
+  "scores": {
+    "groundedness": 3.59,
+    "relevance": 3.0,
+    "actionability": 2.26,
+    "safety": 4.48,
+    "tone": 3.07,
+    "overall": 2.67
+  },
+  "detailed_evaluations": [
+    {
+      "tweet_id": 2975694,
+      "customer_text": "Why does my iPad keep asking me to sign into iCloud every 30 seconds but when I put in my NEWLY changed password it tells me it is incorrect!!! WTF...I can't even use it right now!",
+      "intent": "ACCOUNT_ICLOUD",
+      "is_escalated": false,
+      "generated_response": "We're here to help you access and manage your Apple ID securely. We want you to get the most out of iCloud on your iPad, so let's get to it. Which model do you have and what's the exact iOS version number installed? Let us know how it goes!",
+      "retrieved_context": "We want you to get the most out of iCloud on your iPad, so let's get to it. Which model do you have and what's the exact iOS version number installed?",
+      "scores": {
+        "groundedness": 5,
+        "relevance": 3,
+        "actionability": 2,
+        "safety": 5,
+        "tone": 3,
+        "overall": 3,
+        "reason": "The response gathers basic device information grounded in evidence, but lacks immediate troubleshooting steps for the password loop and awkwardly ends with 'Let us know how it goes!'",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.7-flash"
+      }
+    },
+    {
+      "tweet_id": 2369448,
+      "customer_text": "Yes I can login to appleid without any issue, icloud still go no.",
+      "intent": "ACCOUNT_ICLOUD",
+      "is_escalated": false,
+      "generated_response": "We can help with both your Apple ID / iCloud account and apps and media. First, where are you currently located? Let us know how that goes, and we can look into the apps and media next!",
+      "retrieved_context": "Where are you currently located?",
+      "scores": {
+        "groundedness": 3,
+        "relevance": 3,
+        "actionability": 3,
+        "safety": 5,
+        "tone": 3,
+        "overall": 3,
+        "reason": "The response asks the clarifying location question from historical evidence but unnecessarily introduces unmentioned 'apps and media' topics and uses awkward phrasing.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.7-flash"
+      }
+    },
+    {
+      "tweet_id": 249189,
+      "customer_text": "I changed my AppleID login & pass, but can't sign into the app store on my iPhone 7. My iPad didn't have this problem.",
+      "intent": "ACCOUNT_ICLOUD",
+      "is_escalated": false,
+      "generated_response": "We can help with both your Apple ID / iCloud account and apps and media. First, we are here to help. let's restart the device. Let us know how that goes, and we can look into the apps and media next!",
+      "retrieved_context": "We are here to help. Let's restart the device. Does the issue remain?",
+      "scores": {
+        "groundedness": 5,
+        "relevance": 4,
+        "actionability": 4,
+        "safety": 5,
+        "tone": 3,
+        "overall": 4,
+        "reason": "The response is grounded in the retrieved evidence and offers a clear troubleshooting step, but the tone is highly repetitive with phrases like 'help with' and 'here to help' in close proximity.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash"
+      }
+    },
+    {
+      "tweet_id": 2058730,
+      "customer_text": "My icloud account has been locked for security reasons. Even my Apple ID is locked. I can't receive my confirmation code.",
+      "intent": "ACCOUNT_ICLOUD",
+      "is_escalated": false,
+      "generated_response": "We can help with both your Apple ID / iCloud account and account security. First, we\u2019ll be glad to offer assistance. to clarify, is your apple id locked, or are you attempting to disable activation lock? Let us know how that goes, and we can look into the account security next!",
+      "retrieved_context": "Hi there. We\u2019ll be glad to offer assistance. To clarify, is your Apple ID locked, or are you attempting to disable Activation Lock?",
+      "scores": {
+        "groundedness": 4,
+        "relevance": 3,
+        "actionability": 2,
+        "safety": 3,
+        "tone": 3,
+        "overall": 3,
+        "reason": "The response ignores the customer's explicit statement that their Apple ID is locked by asking them to clarify if it is locked. It also fails to provide an actionable recovery link like iforgot.apple.com for a locked account.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash"
+      }
+    },
+    {
+      "tweet_id": 118068,
+      "customer_text": "someone tell me why i can\u2019t airdrop videos from my phone to my laptop or why the photos app won\u2019t pop up when i plug my phone into my laptop?! i need to transfer vlog footage \ud83e\udd2c\ud83e\udd2c\ud83e\udd2c pls help me",
+      "intent": "APPS_MEDIA",
+      "is_escalated": false,
+      "generated_response": "We can help with both your apps and media and Wi-Fi/network connectivity. First, we'd be happy to see how we can help with airdrop and transferring your videos. to start, can you tell us which iphone and ios version you're using?",
+      "retrieved_context": "We'd be happy to see how we can help with AirDrop and transferring your videos. To start, can you tell us which iPhone and iOS version you're using? Y",
+      "scores": {
+        "groundedness": 5,
+        "relevance": 5,
+        "actionability": 3,
+        "safety": 5,
+        "tone": 3,
+        "overall": 4,
+        "reason": "The response is grounded and relevant, but it misses the helpful Settings path from the evidence and contains several capitalization errors (e.g., 'airdrop', 'iphone', 'ios', 'to start').",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash"
+      }
+    },
+    {
+      "tweet_id": 1332418,
+      "customer_text": "why are entire albums in my Apple Music lists suddenly either greying out or disappearing from iTunes altogether? Copyright?",
+      "intent": "APPS_MEDIA",
+      "is_escalated": false,
+      "generated_response": "We can help you get your apps running properly. Have you recently changed the iTunes Store you're signed in to? Were the songs downloaded for offline play? Let us know how it goes!",
+      "retrieved_context": "Have you recently changed the iTunes Store you're signed in to? Were the songs downloaded for offline play?",
+      "scores": {
+        "groundedness": 5,
+        "relevance": 3,
+        "actionability": 3,
+        "safety": 5,
+        "tone": 4,
+        "overall": 3,
+        "reason": "The response uses the correct diagnostic questions from the retrieved evidence, but the opening sentence incorrectly refers to getting 'apps running properly' instead of addressing music library issues.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash"
+      }
+    },
+    {
+      "tweet_id": 1147023,
+      "customer_text": "Hello Facebook application is consuming a lot of battery is glad you find a solution for it",
+      "intent": "APPS_MEDIA",
+      "is_escalated": false,
+      "generated_response": "We can help with both your apps and media and battery life. First, ok the battery lasts 10 hours with no use. what percentage is facebook using? Let us know how that goes, and we can look into the battery life next!",
+      "retrieved_context": "OK the battery lasts 10 hours with no use. What percentage is Facebook using?",
+      "scores": {
+        "groundedness": 2,
+        "relevance": 3,
+        "actionability": 2,
+        "safety": 5,
+        "tone": 3,
+        "overall": 2,
+        "reason": "The agent blindly copied irrelevant historical context about the battery lasting 10 hours with no use, which makes the response confusing. Additionally, it fails to provide actionable instructions on how the user can check their battery usage settings.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash"
+      }
+    },
+    {
+      "tweet_id": 1646233,
+      "customer_text": "why can\u2019t I click on and listen to songs from my iTunes library all of a sudden? Keep being promoted to join Apple Music",
+      "intent": "APPS_MEDIA",
+      "is_escalated": false,
+      "generated_response": "We can help you get your apps running properly. What happens if you select not now? Also, which device and iOS version are you using? Let us know how it goes!",
+      "retrieved_context": "What happens if you select not now? Also, which device and iOS version are you using?",
+      "scores": {
+        "groundedness": 5,
+        "relevance": 4,
+        "actionability": 4,
+        "safety": 5,
+        "tone": 5,
+        "overall": 4,
+        "reason": "The response is grounded in the retrieved evidence and asks helpful diagnostic questions, though the opening phrase about getting 'apps running properly' is slightly generic for a music library issue.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash"
+      }
+    },
+    {
+      "tweet_id": 2911734,
+      "customer_text": "iOS 11.1.2 draining battery life. Last almost a day from full charge. Half as long when compared to previous iOS. Please sort.",
+      "intent": "BATTERY_POWER",
+      "is_escalated": false,
+      "generated_response": "We can help with both your battery life and device performance. First, we can help! which device are you experiencing battery issues with? Let us know how that goes, and we can look into the device performance next!",
+      "retrieved_context": "We can help! Which device are you experiencing battery issues with?",
+      "scores": {
+        "status": "error",
+        "measured": false,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "reason": "Gemini Judge request failed: 503 UNAVAILABLE. {'error': {'code': 503, 'message': 'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.', 'status': 'UNAVAILABLE'}}"
+      }
+    },
+    {
+      "tweet_id": 2942126,
+      "customer_text": "Because nowadays we pay $800+ for phones to last us 2 years. There's so many battery issues and now it's charging without a charger.",
+      "intent": "BATTERY_POWER",
+      "is_escalated": false,
+      "generated_response": "We can help with both your battery life and billing and purchases. First, we'll be glad to check your service options. shoot us a dm and tell us which country you're located in: Let us know how that goes, and we can look into the billing and purchases next!",
+      "retrieved_context": "Hi there. We'll be glad to check your service options. Shoot us a DM and tell us which country you're located in:",
+      "scores": {
+        "groundedness": 3,
+        "relevance": 3,
+        "actionability": 3,
+        "safety": 5,
+        "tone": 3,
+        "overall": 3,
+        "reason": "The response misinterprets the user's rhetorical price comment as a billing inquiry and contains awkward formatting with a dangling colon. However, it safely routes the battery issue to direct messaging.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.7-flash"
+      }
+    },
+    {
+      "tweet_id": 2485674,
+      "customer_text": "what is the official recommendation for leaving an iPhone X on a wireless charging pad (like in a desk set up) for extended periods of time? Is it bad for the battery to be constantly topped off, or is charger/phone smart? Looking at the Mophie in the Apple Store.",
+      "intent": "BATTERY_POWER",
+      "is_escalated": false,
+      "generated_response": "We can help with both your battery life and apps and media. First, great question. we suggest following this recommendation. Let us know how that goes, and we can look into the apps and media next!",
+      "retrieved_context": "Great question. We suggest following this recommendation. Click here and check out the Learn more section:",
+      "scores": {
+        "groundedness": 1,
+        "relevance": 1,
+        "actionability": 1,
+        "safety": 5,
+        "tone": 2,
+        "overall": 1,
+        "reason": "The response hallucinates an irrelevant topic ('apps and media') and completely fails to provide any answer, link, or actionable recommendation regarding wireless charging.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.7-flash"
+      }
+    },
+    {
+      "tweet_id": 2121055,
+      "customer_text": "11.0.3 giving me feeling like i'm using android phone..battery draining too fast as compared to ios 10.3.3. gets hot when put on charge. IOS 10.3.3 was best according to me. using iphone se",
+      "intent": "OUT_OF_DOMAIN",
+      "is_escalated": false,
+      "generated_response": "We provide support for Apple products and services. For help with Android, please contact the manufacturer's official support team. Let us know if you need help with an Apple device!",
+      "retrieved_context": "",
+      "scores": {
+        "groundedness": 2,
+        "relevance": 1,
+        "actionability": 1,
+        "safety": 2,
+        "tone": 3,
+        "overall": 1,
+        "reason": "The agent completely misunderstood the customer's inquiry, misclassifying the iPhone SE battery and heating issue as an Android support request. It failed to address the safety concern of the device getting hot while charging and provided no actionable steps for the Apple device.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash"
+      }
+    },
+    {
+      "tweet_id": 2646254,
+      "customer_text": "hey, got two lost phone calls from (512) 674-2000 that is you right?",
+      "intent": "CALLS_COMMUNICATION",
+      "is_escalated": false,
+      "generated_response": "We know staying connected is essential, and we're here to help. Thanks for taking the time to reach out. We know it's important to be able to identify legitimate phone calls and we're here to get you pointed in the right direction. Let us know how it goes!",
+      "retrieved_context": "Thanks for taking the time to reach out. We know it's important to be able to identify legitimate phone calls and we're here to get you pointed in the",
+      "scores": {
+        "groundedness": 2,
+        "relevance": 2,
+        "actionability": 1,
+        "safety": 3,
+        "tone": 4,
+        "overall": 2,
+        "reason": "The response completely omits the helpful article link mentioned in the retrieved evidence, leaving the customer with no actionable way to verify the phone number.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash"
+      }
+    },
+    {
+      "tweet_id": 2799476,
+      "customer_text": "#Siri and I have always had issues. I was driving and I told her to call someone. No, she didn\u2019t call the person on the phone. She kept calling out the person\u2019s name over and over and over. She is such a smart aleck.",
+      "intent": "CALLS_COMMUNICATION",
+      "is_escalated": false,
+      "generated_response": "We know staying connected is essential, and we're here to help. We know how important it is to get Siri to work correctly. Here's a helpful article you can check out for this issue: Let us know how it goes!",
+      "retrieved_context": "We know how important it is to get Siri to work correctly. Here's a helpful article you can check out for this issue:",
+      "scores": {
+        "groundedness": 3,
+        "relevance": 3,
+        "actionability": 1,
+        "safety": 5,
+        "tone": 3,
+        "overall": 2,
+        "reason": "The response is highly repetitive and fails to provide the actual link to the article it references, leaving the customer with no actionable next steps.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash"
+      }
+    },
+    {
+      "tweet_id": 2730325,
+      "customer_text": "good morning. My visual voicemail disappeared this morning and I\u2019m now being asked to call my voicemail.",
+      "intent": "CALLS_COMMUNICATION",
+      "is_escalated": false,
+      "generated_response": "We can help with both your calls and messaging and apps and media. First, we know how important visual voicemail is, and we'll do all we can to help. to get started, let us know in dm what type of device you're using and it's os version.",
+      "retrieved_context": "We know how important Visual Voicemail is, and we'll do all we can to help. To get started, let us know in DM what type of device you're using and it'",
+      "scores": {
+        "groundedness": 5,
+        "relevance": 5,
+        "actionability": 4,
+        "safety": 5,
+        "tone": 4,
+        "overall": 4,
+        "reason": "The response is grounded and relevant, but it omits the helpful Settings path from the retrieved evidence and has a slightly clunky, repetitive opening sentence.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash"
+      }
+    },
+    {
+      "tweet_id": 2894757,
+      "customer_text": "i just get a this message \"You will receive a text or a phone call at this number when your account is ready to recover on 11 December 2017 at 21:52:39 GMT+5.50. For updated status information or to provide additional information to help recover your account\"but never got a call.",
+      "intent": "CALLS_COMMUNICATION",
+      "is_escalated": false,
+      "generated_response": "We can help with both your calls and messaging and device performance. First, by the date indicated, it looks like you'd have to wait until december 11, 2017.",
+      "retrieved_context": "By the date indicated, it looks like you'd have to wait until December 11, 2017. You can read more about the account recovery process here:",
+      "scores": {
+        "groundedness": 4,
+        "relevance": 1,
+        "actionability": 1,
+        "safety": 2,
+        "tone": 2,
+        "overall": 1,
+        "reason": "The response is highly irrelevant and unhelpful because it tells the customer to wait for a date (December 11, 2017) that has already passed, and it fails to provide any actionable next steps or official links for account recovery.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash"
+      }
+    },
+    {
+      "tweet_id": 2406560,
+      "customer_text": "Hey Apple, so my IPhone X frequently doesn't connect with my carrier. It shows full cellular phone bars and internet connection but I cant call nor my cellular internet works. This happens frequently. The phone is like 1 week new. Please help!",
+      "intent": "CONNECTIVITY",
+      "is_escalated": false,
+      "generated_response": "We can help with both your Wi-Fi/network connectivity and calls and messaging. First, it's important for your iphone to be reliable so you can make calls and use cellular data when needed. let us know which version of ios you\u2019re running on the iphone in dm.",
+      "retrieved_context": "It's important for your iPhone to be reliable so you can make calls and use cellular data when needed. Let us know which version of iOS you\u2019re running",
+      "scores": {
+        "groundedness": 5,
+        "relevance": 5,
+        "actionability": 3,
+        "safety": 5,
+        "tone": 4,
+        "overall": 4,
+        "reason": "The response is grounded in the retrieved evidence and directly addresses the user's connectivity issue. However, it lacks immediate, actionable troubleshooting steps like restarting the device or toggling Airplane Mode before moving to DMs.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash"
+      }
+    },
+    {
+      "tweet_id": 1878001,
+      "customer_text": "#IOS11 is the worst update ever! Apps don\u2019t work when on wifi & Bluetooth connections stop if I touch my phone. sort it out!",
+      "intent": "CONNECTIVITY",
+      "is_escalated": false,
+      "generated_response": "We can help with both your Wi-Fi/network connectivity and apps and media. First, we'd be happy to check it out. what happens when you try to use an app? Let us know how that goes, and we can look into the apps and media next!",
+      "retrieved_context": "We'd be happy to check it out. What happens when you try to use an app? Which device model do you own? Let us know in DM.",
+      "scores": {
+        "groundedness": 4,
+        "relevance": 4,
+        "actionability": 3,
+        "safety": 5,
+        "tone": 3,
+        "overall": 3,
+        "reason": "The response acknowledges the issue and asks a clarifying question, but it misses the Bluetooth mention and contains repetitive, slightly awkward phrasing without offering concrete troubleshooting steps.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.7-flash"
+      }
+    },
+    {
+      "tweet_id": 2213578,
+      "customer_text": "Wow update bricked my phone basically don\u2019t get internet signal unless on wifi",
+      "intent": "CONNECTIVITY",
+      "is_escalated": false,
+      "generated_response": "We can help with both your Wi-Fi/network connectivity and calls and messaging. First, this is not the expected behavior. we'd be happy to look into this with you in dm here: Let us know how that goes, and we can look into the calls and messaging next!",
+      "retrieved_context": "This is not the expected behavior. We'd be happy to look into this with you in DM here:",
+      "scores": {
+        "groundedness": 4,
+        "relevance": 3,
+        "actionability": 2,
+        "safety": 5,
+        "tone": 3,
+        "overall": 3,
+        "reason": "The response hallucinates issues regarding calls and messaging that the customer did not mention, and fails to provide actionable cellular troubleshooting steps or a working DM link.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.7-flash"
+      }
+    },
+    {
+      "tweet_id": 1638757,
+      "customer_text": "Same here. And now I don\u2019t have internet connection unless connected to WiFi thanks a lot. #thisupdatesucks",
+      "intent": "CONNECTIVITY",
+      "is_escalated": false,
+      "generated_response": "We can help with both your Wi-Fi/network connectivity and device performance. First, that\u2019s not what we\u2019d like to hear. let\u2019s make sure to check all the steps on this page: Let us know how that goes, and we can look into the device performance next!",
+      "retrieved_context": "That\u2019s not what we\u2019d like to hear. Let\u2019s make sure to check all the steps on this page:",
+      "scores": {
+        "groundedness": 3,
+        "relevance": 3,
+        "actionability": 1,
+        "safety": 5,
+        "tone": 2,
+        "overall": 2,
+        "reason": "The response fails to include the actual link or troubleshooting steps referenced, leaving the customer without actionable guidance. The phrasing and grammar are also awkward and poorly formatted.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.7-flash"
+      }
+    },
+    {
+      "tweet_id": 2425815,
+      "customer_text": "My computer charger doesn't work very well (the cord was chewed by my cat) only works if the cord is held at a specific angle, and if it disconnects my computer just shuts off. But I can turn it back on and it's capable of running on battery power for a few hours. whyyyyyy",
+      "intent": "BATTERY_POWER",
+      "is_escalated": false,
+      "generated_response": "We can help with both your battery life and billing and purchases. First, we want to help you. are you using a known good charger? Let us know how that goes, and we can look into the billing and purchases next!",
+      "retrieved_context": "We want to help you. Are you using a known good charger? What have you tried so far to resolve this?",
+      "scores": {
+        "groundedness": 2,
+        "relevance": 2,
+        "actionability": 2,
+        "safety": 3,
+        "tone": 2,
+        "overall": 2,
+        "reason": "The response hallucinates irrelevant topics like billing and purchases and fails to address the safety hazard of using a physically damaged, chewed charging cable.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.7-flash"
+      }
+    },
+    {
+      "tweet_id": 1645797,
+      "customer_text": "my data wheel will not stop spinning. All apps closed. Good connection to WiFi and cellular. Please help",
+      "intent": "CONNECTIVITY",
+      "is_escalated": false,
+      "generated_response": "We can help with both your Wi-Fi/network connectivity and apps and media. First, please include your version of ios. Let us know how that goes, and we can look into the apps and media next!",
+      "retrieved_context": "Send us a DM and we'll have a look into this together. Please include your version of iOS.",
+      "scores": {
+        "status": "error",
+        "measured": false,
+        "provider": "gemini",
+        "model": "gemini-3.7-flash",
+        "reason": "Gemini Judge request failed: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 5, model: gemini-3.5-flash\\nPlease retry in 57.636358993s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.5-flash'}, 'quotaValue': '5'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '57s'}]}}"
+      }
+    },
+    {
+      "tweet_id": 1060566,
+      "customer_text": "This new IOS update is awful my phone constantly crashes and freezes I can barely use it.When is this going to be fixed?!!?",
+      "intent": "DEVICE_PERFORMANCE",
+      "is_escalated": false,
+      "generated_response": "We want your device running smoothly and are glad to help. We'll go from there. Let us know how it goes!",
+      "retrieved_context": "Send us a DM and let us know what version of iOS 11 you're running. We'll go from there.",
+      "scores": {
+        "status": "error",
+        "measured": false,
+        "provider": "gemini",
+        "model": "gemini-3.7-flash",
+        "reason": "Gemini Judge request failed: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 5, model: gemini-3.5-flash\\nPlease retry in 51.051614043s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerMinutePerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-3.5-flash', 'location': 'global'}, 'quotaValue': '5'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '51s'}]}}"
+      }
+    },
+    {
+      "tweet_id": 2584329,
+      "customer_text": "Dear it is not ok that your iOS updates turn my iPhone6s into a brick. YOU STILL SELL 6s\u2019s!!!! Enough with the software updated forcing hardware purchases to the tune of a grand b/c devices can\u2019t handle it and slow to a crawl or freeze.",
+      "intent": "DEVICE_PERFORMANCE",
+      "is_escalated": false,
+      "generated_response": "We can help with both your device performance and billing and purchases. First, we want to help with the issues you're experiencing. Let us know how that goes, and we can look into the billing and purchases next!",
+      "retrieved_context": "We want to help with the issues you're experiencing. Send us a DM and we'll go from there.",
+      "scores": {
+        "groundedness": 3,
+        "relevance": 3,
+        "actionability": 2,
+        "safety": 5,
+        "tone": 3,
+        "overall": 3,
+        "reason": "The response introduces an irrelevant 'billing and purchases' topic not mentioned in the customer's performance complaint. Additionally, it fails to provide a clear call to action, such as inviting the customer to DM, which was present in the retrieved evidence.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash"
+      }
+    },
+    {
+      "tweet_id": 769556,
+      "customer_text": "iPhone call app all blurry & unusable after iOS 11 update. Can\u2019t make calls/access voicemail. Any tips to fix? Oh, and \u201cGrrrr\u201d to \ud83d\ude21",
+      "intent": "CALLS_COMMUNICATION",
+      "is_escalated": false,
+      "generated_response": "We can help with both your calls and messaging and device performance. First, we can help. could you let us know which version of ios 11 you are using? Let us know how that goes, and we can look into the device performance next!",
+      "retrieved_context": "We can help. Could you let us know which version of iOS 11 you are using? We are currently at iOS 11.0.2.",
+      "scores": {
+        "groundedness": 5,
+        "relevance": 4,
+        "actionability": 3,
+        "safety": 5,
+        "tone": 3,
+        "overall": 3,
+        "reason": "The response is grounded in the retrieved evidence but suffers from repetitive phrasing and poor grammar/capitalization. It also lacks concrete instructions on how the user can find their iOS version.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash"
+      }
+    },
+    {
+      "tweet_id": 391721,
+      "customer_text": "\ud83d\udc4f\ud83c\udffc\ud83d\udc4d\ud83c\udffc Thank you so much. I gotta say it\u2019s a weird place to put it when there\u2019s an existing \u2018display and brightness\u2019 section!",
+      "intent": "DISPLAY_AUDIO_CAMERA",
+      "is_escalated": false,
+      "generated_response": "Let's look into what's happening with your screen/audio. You're very welcome. Feel free to reach out to us if you need anything in the future. Let us know how it goes!",
+      "retrieved_context": "You're very welcome. Feel free to reach out to us if you need anything in the future.",
+      "scores": {
+        "groundedness": 4,
+        "relevance": 3,
+        "actionability": 2,
+        "safety": 5,
+        "tone": 3,
+        "overall": 3,
+        "reason": "The agent's response is confusing because it attempts to initiate troubleshooting ('Let's look into what's happening') even though the customer was thanking them for resolving the issue. This makes the response repetitive and irrelevant to the customer's closing statement.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash"
+      }
+    },
+    {
+      "tweet_id": 1001129,
+      "customer_text": "my iPhone 7 Plus doesn\u2019t work properly with 11.0.3 \ud83d\ude21\ud83d\ude21. The speaker doesn\u2019t work on calls, is non responsive & screen locks!!",
+      "intent": "DISPLAY_AUDIO_CAMERA",
+      "is_escalated": false,
+      "generated_response": "We can help with both your display and audio and calls and messaging. First, we'd love to help. could you direct message us and let us know what country you're located in? Let us know how that goes, and we can look into the calls and messaging next!",
+      "retrieved_context": "We'd love to help. Could you Direct Message us and let us know what country you're located in?",
+      "scores": {
+        "groundedness": 5,
+        "relevance": 4,
+        "actionability": 3,
+        "safety": 5,
+        "tone": 2,
+        "overall": 3,
+        "reason": "The response is grounded in the retrieved evidence but is highly repetitive and awkwardly phrased, telling the user 'Let us know how that goes' after simply asking for their country in a DM.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash"
+      }
+    },
+    {
+      "tweet_id": 501463,
+      "customer_text": "Thank you, but the brightness level still changes on its own. Even now as I\u2019m typing this, the screen got darker. In the past there was a switch to turn this off, but I can\u2019t find it now.",
+      "intent": "DISPLAY_AUDIO_CAMERA",
+      "is_escalated": false,
+      "generated_response": "We can help with both your display and audio and keyboard typing. First, clean the sensors/speakers, restart your device, and check settings > display & brightness or sounds. Let us know how that goes, and we can look into the keyboard typing next!",
+      "retrieved_context": "Send us a DM so that we can look into this further.",
+      "scores": {
+        "groundedness": 2,
+        "relevance": 2,
+        "actionability": 2,
+        "safety": 5,
+        "tone": 4,
+        "overall": 2,
+        "reason": "The agent response incorrectly identifies the customer's context of 'typing' as a keyboard issue and brings up unrelated audio troubleshooting. Additionally, it provides the wrong settings path for disabling auto-brightness, which is located under Accessibility rather than Display & Brightness.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash"
+      }
+    },
+    {
+      "tweet_id": 46836,
+      "customer_text": "I Found an iPad on the train how can I return it to its rightful owner?",
+      "intent": "HOW_TO_OTHER",
+      "is_escalated": false,
+      "generated_response": "We'd be happy to help answer your question. We're sorry to hear about your MacBook and iPad. If you need a receipt, you can contact the store where you bought them as support is unable to produce those for you. Let us know how it goes!",
+      "retrieved_context": "We're sorry to hear about your MacBook and iPad. If you need a receipt, you can contact the store where you bought them as support is unable to produc",
+      "scores": {
+        "groundedness": 1,
+        "relevance": 1,
+        "actionability": 1,
+        "safety": 3,
+        "tone": 2,
+        "overall": 1,
+        "reason": "The agent response is completely irrelevant to the customer's inquiry about returning a found iPad, blindly copying unrelated historical evidence about MacBook receipts instead.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash"
+      }
+    },
+    {
+      "tweet_id": 1638986,
+      "customer_text": "Hi, all my FB contacts are in contacts. How do I make them go away? Doesn't work through groups our FB settings!",
+      "intent": "HOW_TO_OTHER",
+      "is_escalated": false,
+      "generated_response": "We'd be happy to help answer your question. We can get to the bottom of this together. If you tap Contacts > Groups, do you see hide all contacts or show all contacts? Let us know how it goes!",
+      "retrieved_context": "We can get to the bottom of this together. If you tap Contacts > Groups, do you see hide all contacts or show all contacts?",
+      "scores": {
+        "status": "error",
+        "measured": false,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "reason": "Gemini Judge request failed: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.7-flash\\nPlease retry in 18.399568219s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.7-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '18s'}]}}"
+      }
+    },
+    {
+      "tweet_id": 2947137,
+      "customer_text": "I\u2019m having terrible trouble with my iPhone 7 since the update. Today it\u2019s erased all my contacts how Can I fix this??",
+      "intent": "HOW_TO_OTHER",
+      "is_escalated": false,
+      "generated_response": "We can help with both your general settings and device performance. First, we want to make sure you're able to access contact information on your iphone. to confirm, which specific version of ios 11 is currently installed?",
+      "retrieved_context": "We want to make sure you're able to access contact information on your iPhone. To confirm, which specific version of iOS 11 is currently installed? Le",
+      "scores": {
+        "status": "error",
+        "measured": false,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "reason": "Gemini Judge request failed: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.7-flash\\nPlease retry in 14.165962578s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.7-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '14s'}]}}"
+      }
+    },
+    {
+      "tweet_id": 1980705,
+      "customer_text": "In settings > calendar (where do I turn off?)",
+      "intent": "HOW_TO_OTHER",
+      "is_escalated": false,
+      "generated_response": "We'd be happy to help answer your question. Great question. When you create a new event, you sill see the option when clicking on the date or time. Let us know how it goes!",
+      "retrieved_context": "Great question. When you create a new event, you sill see the option when clicking on the date or time.",
+      "scores": {
+        "status": "error",
+        "measured": false,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "reason": "Gemini Judge request failed: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.7-flash\\nPlease retry in 9.823706521s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-3.7-flash', 'location': 'global'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '9s'}]}}"
+      }
+    },
+    {
+      "tweet_id": 1512188,
+      "customer_text": "It's OK, I fixed it! SwiftKey hasn't updated with the new emojis and that's my primary keyboard. All good! \ud83d\ude42",
+      "intent": "KEYBOARD_INPUT",
+      "is_escalated": false,
+      "generated_response": "We can help with both your keyboard typing and device performance. First, great job isolating the issue! thanks for letting us know and enjoy the rest of your day. Let us know how that goes, and we can look into the device performance next!",
+      "retrieved_context": "Great job isolating the issue! Thanks for letting us know and enjoy the rest of your day.",
+      "scores": {
+        "status": "error",
+        "measured": false,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "reason": "Gemini Judge request failed: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.7-flash\\nPlease retry in 5.599480012s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.7-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '5s'}]}}"
+      }
+    },
+    {
+      "tweet_id": 1606758,
+      "customer_text": "text is hidden by keyboard when I type in safari on iOS 11.1",
+      "intent": "KEYBOARD_INPUT",
+      "is_escalated": false,
+      "generated_response": "We can help with both your keyboard typing and device performance. First, let's check it together. does this happen only in messages? Let us know how that goes, and we can look into the device performance next!",
+      "retrieved_context": "Let's check it together. Does this happen only in Messages? Which iPhone model do you own? What's the iOS version?",
+      "scores": {
+        "status": "error",
+        "measured": false,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "reason": "Gemini Judge request failed: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.7-flash\\nPlease retry in 1.390848098s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.7-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '1s'}]}}"
+      }
+    },
+    {
+      "tweet_id": 1703075,
+      "customer_text": "WHAT THE FUCK IS WRONG WITH MY KEYBOARD I\ufe0f CANT TYPE THE LETTER I\ufe0f LIKE WTF",
+      "intent": "KEYBOARD_INPUT",
+      "is_escalated": false,
+      "generated_response": "Let's help get your keyboard working properly again. Here\u2019s what you can do to work around the issue until it\u2019s fixed in a future software update: Let us know how it goes!",
+      "retrieved_context": "Here\u2019s what you can do to work around the issue until it\u2019s fixed in a future software update:",
+      "scores": {
+        "status": "error",
+        "measured": false,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "reason": "Gemini Judge request failed: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.7-flash\\nPlease retry in 56.936025409s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.7-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '56s'}]}}"
+      }
+    },
+    {
+      "tweet_id": 1583118,
+      "customer_text": "Emoji suggestions in iPhone X US English keyboard do not show despite add/remove of Emoji keyboard and reenabling of \u201cPredictive\u201d.",
+      "intent": "KEYBOARD_INPUT",
+      "is_escalated": false,
+      "generated_response": "Let's help get your keyboard working properly again. Let us take a look at that with you. Let us know how it goes!",
+      "retrieved_context": "Let us take a look at that with you. Send us a DM and let us know which version of iOS you're using.",
+      "scores": {
+        "status": "error",
+        "measured": false,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "reason": "Gemini Judge request failed: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.7-flash\\nPlease retry in 52.608845799s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-3.7-flash', 'location': 'global'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '52s'}]}}"
+      }
+    },
+    {
+      "tweet_id": 2500897,
+      "customer_text": "So, and the is warning me that I can\u2019t get a refund when I press buy and something about 14 days... Does this mean I can get a refund Before buying the app? Idiotic system. Lack of refund is a major problem in the App Store.",
+      "intent": "PURCHASE_PAYMENT",
+      "is_escalated": false,
+      "generated_response": "We can help with both your billing and purchases and apps and media. First, we suggest you use the link to request a refund for any issues you have with a recent purchase: Let us know how that goes, and we can look into the apps and media next!",
+      "retrieved_context": "We suggest you use the link to request a refund for any issues you have with a recent purchase:",
+      "scores": {
+        "groundedness": 5,
+        "relevance": 3,
+        "actionability": 2,
+        "safety": 5,
+        "tone": 4,
+        "overall": 3,
+        "reason": "The response fails to explain the 14-day waiver warning the customer asked about, and it instructs them to use a link that was never actually provided in the text.",
+        "status": "ok",
+        "measured": true,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash"
+      }
+    },
+    {
+      "tweet_id": 2666282,
+      "customer_text": "After first receiving a message saying \"We are unable to process your request at this time. Try again later.\", I now have a message saying \"This purchase is not eligible for a refund.\" I am very unhappy that we've paid 33\u20ac for a picture of a cartoon mammoth :(",
+      "intent": "PURCHASE_PAYMENT",
+      "is_escalated": false,
+      "generated_response": "We can help with both your billing and purchases and apps and media. First, we'd recommend contacting our itunes support team. they can be reached here: Let us know how that goes, and we can look into the apps and media next!",
+      "retrieved_context": "We'd recommend contacting our iTunes Support team. They can be reached here:",
+      "scores": {
+        "status": "error",
+        "measured": false,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "reason": "Gemini Judge request failed: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.7-flash\\nPlease retry in 43.504281151s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.7-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '43s'}]}}"
+      }
+    },
+    {
+      "tweet_id": 1474845,
+      "customer_text": "hi, I had money removed from my account only for my payment method to be declined later and no purchase. Refund please.",
+      "intent": "PURCHASE_PAYMENT",
+      "is_escalated": false,
+      "generated_response": "We can help with both your billing and purchases and Apple ID / iCloud account. First, for the best assistance with this, connect with our itunes store team. you can connect with them here: Let us know how that goes, and we can look into the Apple ID / iCloud account next!",
+      "retrieved_context": "For the best assistance with this, connect with our iTunes Store team. You can connect with them here:",
+      "scores": {
+        "status": "error",
+        "measured": false,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "reason": "Gemini Judge request failed: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.7-flash\\nPlease retry in 41.633537049s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'model': 'gemini-3.7-flash', 'location': 'global'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '41s'}]}}"
+      }
+    },
+    {
+      "tweet_id": 878879,
+      "customer_text": "iTunes won\u2019t use my available credit as payment anymore. Wants credit card for purchases.",
+      "intent": "PURCHASE_PAYMENT",
+      "is_escalated": false,
+      "generated_response": "We can help with both your billing and purchases and apps and media. First, our itunes store support can have a look at this for you. reach out here: Let us know how that goes, and we can look into the apps and media next!",
+      "retrieved_context": "Our iTunes Store support can have a look at this for you. Reach out here:",
+      "scores": {
+        "status": "error",
+        "measured": false,
+        "provider": "gemini",
+        "model": "gemini-3.5-flash",
+        "reason": "Gemini Judge request failed: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \\n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 20, model: gemini-3.7-flash\\nPlease retry in 39.630809711s.', 'status': 'RESOURCE_EXHAUSTED', 'details': [{'@type': 'type.googleapis.com/google.rpc.Help', 'links': [{'description': 'Learn more about Gemini API quotas', 'url': 'https://ai.google.dev/gemini-api/docs/rate-limits'}]}, {'@type': 'type.googleapis.com/google.rpc.QuotaFailure', 'violations': [{'quotaMetric': 'generativelanguage.googleapis.com/generate_content_free_tier_requests', 'quotaId': 'GenerateRequestsPerDayPerProjectPerModel-FreeTier', 'quotaDimensions': {'location': 'global', 'model': 'gemini-3.7-flash'}, 'quotaValue': '20'}]}, {'@type': 'type.googleapis.com/google.rpc.RetryInfo', 'retryDelay': '39s'}]}}"
+      }
+    }
+  ],
+  "human_agreement": {
+    "status": "Measured",
+    "sample_size": 27,
+    "cohen_kappa_weighted": 0.8462,
+    "spearman_rho": 0.8223,
+    "p_value": 0.0
+  }
+}

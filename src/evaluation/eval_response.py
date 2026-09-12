@@ -144,10 +144,10 @@ def evaluate_response_quality(pipeline: Optional[SupportAgentPipeline] = None) -
     print(f"  Overall Guardrail & Quality Pass : {overall_pass_rate * 100:.1f}% ({all_passed_count}/{total})")
     print(f"  Response Length (chars)          : min={min_len}, avg={avg_len:.1f}, max={max_len}")
     print(f"  Mean End-to-End Latency          : {avg_lat:.2f} ms")
-    print("  LLM-as-a-Judge Score             : NOT MEASURED (Deterministic offline evaluation only)")
+    print("  LLM-as-a-Judge Score             : NOT MEASURED (Offline environment; see llm_judge.py)")
     print("=" * 80)
 
-    return {
+    res_dict = {
         "total_prompts": total,
         "length_compliance_rate": round(len_comp_rate, 4),
         "pii_compliance_rate": round(pii_comp_rate, 4),
@@ -159,6 +159,19 @@ def evaluate_response_quality(pipeline: Optional[SupportAgentPipeline] = None) -
         "mean_latency_ms": round(avg_lat, 2),
         "llm_judge_score": "NOT_MEASURED"
     }
+
+    out_dir = os.path.join("data", "evaluation")
+    os.makedirs(out_dir, exist_ok=True)
+    out_file = os.path.join(out_dir, "response_evaluation_results.json")
+    try:
+        import json
+        with open(out_file, "w", encoding="utf-8") as f:
+            json.dump(res_dict, f, indent=2)
+        print(f"Response quality results saved to '{out_file}'.")
+    except Exception as e:
+        print(f"[Warning] Could not save response results: {e}")
+
+    return res_dict
 
 
 if __name__ == "__main__":

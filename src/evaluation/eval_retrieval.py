@@ -77,15 +77,16 @@ def evaluate_retrieval_engine(
     hit_rate = hits / total_queries
 
     print("-" * 75)
-    print("RETRIEVAL SUMMARY METRICS:")
+    print("SAMPLE RETRIEVAL SUMMARY METRICS:")
     print(f"  Total Queries Evaluated     : {total_queries}")
     print(f"  Mean Top-1 Cosine Similarity: {mean_top1:.4f}")
     print(f"  Mean Top-3 Avg Similarity   : {mean_top3:.4f}")
-    print(f"  Relevance Hit Rate (>=0.35) : {hit_rate * 100:.1f}%")
+    print(f"  Similarity Hit Rate (>=0.35): {hit_rate * 100:.1f}%")
     print(f"  Mean Retrieval Latency      : {mean_latency:.2f} ms per query")
     print("=" * 75)
 
-    return {
+    sample_metrics = {
+        "suite": "sample_retrieval_queries",
         "total_queries": total_queries,
         "corpus_size": retriever.index.ntotal,
         "mean_top1_similarity": round(mean_top1, 4),
@@ -93,6 +94,87 @@ def evaluate_retrieval_engine(
         "relevance_hit_rate": round(hit_rate, 4),
         "mean_latency_ms": round(mean_latency, 2)
     }
+
+    # -----------------------------------------------------------------------
+    # Golden Set Evaluation (200 Customer Queries)
+    # -----------------------------------------------------------------------
+    golden_metrics = None
+    golden_path = "golden_set.csv"
+    if os.path.exists(golden_path):
+        try:
+            import pandas as pd
+            df = pd.read_csv(golden_path)
+            queries = df["customer_text"].tolist()
+
+            g_top1 = []
+            g_top3 = []
+            g_latencies = []
+            g_hits = 0
+
+            for q in queries:
+                st = time.perf_counter()
+                res = retriever.retrieve(q, k=k, min_similarity_threshold=min_threshold)
+                g_latencies.append((time.perf_counter() - st) * 1000)
+
+                if res:
+                    t1 = res[0]["score"]
+                    t3 = float(np.mean([r["score"] for r in res]))
+                    g_top1.append(t1)
+                    g_top3.append(t3)
+                    if t1 >= min_threshold:
+                        g_hits += 1
+                else:
+                    g_top1.append(0.0)
+                    g_top3.append(0.0)
+
+            g_total = len(queries)
+            g_mean_top1 = float(np.mean(g_top1))
+            g_mean_top3 = float(np.mean(g_top3))
+            g_mean_lat = float(np.mean(g_latencies))
+            g_p95_lat = float(np.percentile(g_latencies, 95))
+            g_hit_rate = g_hits / g_total
+
+            print("\n" + "=" * 75)
+            print(f"GOLDEN SET RETRIEVAL EVALUATION (N={g_total})")
+            print("=" * 75)
+            print(f"  Corpus Size                 : {retriever.index.ntotal:,} documents")
+            print(f"  Mean Top-1 Cosine Similarity: {g_mean_top1:.4f}")
+            print(f"  Mean Top-3 Avg Similarity   : {g_mean_top3:.4f}")
+            print(f"  Similarity Hit Rate (>=0.35): {g_hit_rate * 100:.2f}% ({g_hits}/{g_total})")
+            print(f"  Mean Retrieval Latency      : {g_mean_lat:.2f} ms")
+            print(f"  P95 Retrieval Latency       : {g_p95_lat:.2f} ms")
+            print("=" * 75)
+
+            golden_metrics = {
+                "suite": "golden_set_200_queries",
+                "total_queries": g_total,
+                "corpus_size": retriever.index.ntotal,
+                "mean_top1_similarity": round(g_mean_top1, 4),
+                "mean_top3_similarity": round(g_mean_top3, 4),
+                "similarity_hit_rate": round(g_hit_rate, 4),
+                "mean_latency_ms": round(g_mean_lat, 2),
+                "p95_latency_ms": round(g_p95_lat, 2)
+            }
+        except Exception as e:
+            print(f"[Warning] Could not run golden set retrieval evaluation: {e}")
+
+    output_results = {
+        "sample_suite": sample_metrics,
+        "golden_set_evaluation": golden_metrics
+    }
+
+    out_dir = os.path.join("data", "evaluation")
+    os.makedirs(out_dir, exist_ok=True)
+    out_file = os.path.join(out_dir, "retrieval_evaluation_results.json")
+    try:
+        import json
+        with open(out_file, "w", encoding="utf-8") as f:
+            json.dump(output_results, f, indent=2)
+        print(f"Retrieval results saved to '{out_file}'.")
+    except Exception as e:
+        print(f"[Warning] Could not save retrieval results: {e}")
+
+    return sample_metrics
 
 
 if __name__ == "__main__":

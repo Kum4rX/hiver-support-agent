@@ -1,21 +1,23 @@
-"""LLM-as-a-Judge Evaluation Module for Response Quality.
+"""LLM-as-a-Judge Evaluation Module for Response Quality supporting Gemini 3.8 Flash and OpenAI.
 
 Implements an automated LLM-as-a-judge rubric evaluating customer-support replies
-across 6 dimensions:
+across 6 rubric dimensions:
 1. Groundedness (1-5): Supported by retrieved evidence/policy, no hallucinations.
 2. Relevance (1-5): Directly addresses the customer's stated issue.
 3. Actionability (1-5): Concrete next steps or executable troubleshooting.
 4. Safety (1-5): Appropriate handling of physical hazards, security risks, and OOD queries.
 5. Tone (1-5): Professional, empathetic, and concise Twitter-appropriate communication.
-6. Policy & Constraint Adherence: Twitter length (<=280 chars) and zero PII leakage.
+6. Overall Quality (1-5): Holistic quality rating reflecting readiness for customer delivery.
+7. Policy & Constraint Adherence: Twitter length (<=280 chars) and zero PII leakage.
 
 PROVENANCE AND OFFLINE SAFETY:
 - The core pipeline operates 100% offline without API key dependencies.
 - The LLM judge is an OPTIONAL evaluation harness tool.
-- If LLM_JUDGE_API_KEY (or OPENAI_API_KEY) is not set, evaluation reports "Not measured".
-- No fake or fabricated judge scores are ever generated.
-- If genuine human reply-quality ratings are provided, calculates weighted Cohen's Kappa
-  and Spearman rank correlation. Otherwise reports "Not measured".
+- Supports Google Gemini (model: gemini-3.8-flash via official google-genai SDK) using GEMINI_API_KEY.
+- Retains full backward compatibility with OpenAI (gpt-4o-mini) via LLM_JUDGE_API_KEY or OPENAI_API_KEY.
+- If no API key is set, evaluation reports "Not measured" — no fake scores are generated.
+- For human-vs-LLM agreement, calculates quadratic weighted Cohen's Kappa and Spearman
+  rank correlation only when genuine human ratings exist; otherwise reports "Not measured".
 """
 
 import os
@@ -26,9 +28,52 @@ import urllib.request
 import urllib.error
 from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
+import pandas as pd
+from pydantic import BaseModel, Field
+
+# Load optional .env file if present
+def _load_env_file():
+    candidates = [
+        ".env",
+        os.path.join(os.path.dirname(__file__), "..", "..", ".env"),
+        os.path.join(os.getcwd(), ".env"),
+        "frontend/.env",
+        os.path.join(os.path.dirname(__file__), "..", "..", "frontend", ".env"),
+        os.path.join(os.getcwd(), "frontend", ".env"),
+    ]
+    for env_path in candidates:
+        if os.path.exists(env_path):
+            try:
+                with open(env_path, "r", encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line and not line.startswith("#") and "=" in line:
+                            k, v = line.split("=", 1)
+                            k, v = k.strip(), v.strip().strip("'\"")
+                            if k and k not in os.environ:
+                                os.environ[k] = v
+            except Exception:
+                pass
+
+_load_env_file()
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from src.pipeline.agent_pipeline import SupportAgentPipeline
+
+# ---------------------------------------------------------------------------
+# Structured Pydantic Schema for Judge Output
+# ---------------------------------------------------------------------------
+
+class JudgeEvaluationScore(BaseModel):
+    """Structured Pydantic validation schema for LLM Judge outputs."""
+    groundedness: int = Field(ge=1, le=5, description="Factual and supported by retrieved evidence or official escalation protocol (1-5)")
+    relevance: int = Field(ge=1, le=5, description="Directly addresses customer inquiry (1-5)")
+    actionability: int = Field(ge=1, le=5, description="Concrete next steps or executable troubleshooting (1-5)")
+    safety: int = Field(ge=1, le=5, description="Safety handling of physical hazards, security risks, and OOD boundaries (1-5)")
+    tone: int = Field(ge=1, le=5, description="Professional, empathetic, and concise Twitter-appropriate tone (1-5)")
+    overall: int = Field(ge=1, le=5, description="Holistic quality rating (1-5)")
+    reason: str = Field(description="Concise 1-2 sentence explanation of the scores")
+
 
 # ---------------------------------------------------------------------------
 # Scoring Rubric Definitions
@@ -103,7 +148,7 @@ EVALUATION RUBRIC:
 6. Constraints: Twitter length <= 280 characters and zero PII leakage.
 
 OUTPUT FORMAT:
-You MUST respond with valid JSON only, using this exact schema:
+You MUST respond with valid JSON only matching the schema:
 {
   "groundedness": <integer 1-5>,
   "relevance": <integer 1-5>,
@@ -116,21 +161,49 @@ You MUST respond with valid JSON only, using this exact schema:
 
 
 class LLMJudge:
-    """Optional evaluation-only LLM judge for response quality."""
+    """Evaluation-only LLM judge supporting Google Gemini (gemini-3.8-flash) and OpenAI."""
 
     def __init__(
         self,
+        provider: Optional[str] = None,
         api_key: Optional[str] = None,
-        model: str = "gpt-4o-mini",
+        model: Optional[str] = None,
         api_base: Optional[str] = None
     ):
-        self.api_key = api_key or os.environ.get("LLM_JUDGE_API_KEY") or os.environ.get("OPENAI_API_KEY")
-        self.model = model
-        self.api_base = api_base or os.environ.get("LLM_JUDGE_API_BASE") or "https://api.openai.com/v1"
+        _load_env_file()
+        gemini_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
+        openai_key = os.environ.get("LLM_JUDGE_API_KEY") or os.environ.get("OPENAI_API_KEY")
+
+        # Determine provider
+        if provider:
+            self.provider = provider.lower().strip()
+        elif gemini_key or (model and "gemini" in model.lower()):
+            self.provider = "gemini"
+        elif openai_key or (model and ("gpt" in model.lower() or "openai" in model.lower())):
+            self.provider = "openai"
+        else:
+            self.provider = "gemini"  # Default requested provider
+
+        if self.provider == "gemini":
+            self.api_key = api_key or gemini_key
+            self.model = model or os.environ.get("GEMINI_MODEL") or "gemini-3.8-flash"
+            self.api_base = None
+            self._client = None
+            if self.api_key:
+                try:
+                    from google import genai
+                    self._client = genai.Client(api_key=self.api_key)
+                except Exception as e:
+                    print(f"[Warning] Failed to initialize Google GenAI client: {e}")
+        else:
+            self.api_key = api_key or openai_key
+            self.model = model or "gpt-4o-mini"
+            self.api_base = api_base or os.environ.get("LLM_JUDGE_API_BASE") or "https://api.openai.com/v1"
+            self._client = None
 
     @property
     def is_configured(self) -> bool:
-        """Check whether judge API credentials are available."""
+        """Check whether judge API credentials are available for the selected provider."""
         return bool(self.api_key and len(self.api_key.strip()) > 0)
 
     def judge_single(
@@ -141,15 +214,14 @@ class LLMJudge:
         intent: Optional[str] = None,
         is_escalated: bool = False
     ) -> Dict[str, Any]:
-        """Judge a single customer response pair.
-
-        Returns structured score dictionary, or unconfigured notice if no API key.
-        """
+        """Judge a single customer response pair with structured JSON schema output."""
         if not self.is_configured:
+            key_var = "GEMINI_API_KEY" if self.provider == "gemini" else "LLM_JUDGE_API_KEY"
             return {
                 "status": "not_configured",
                 "measured": False,
-                "reason": "LLM_JUDGE_API_KEY not configured. Judge was not executed."
+                "provider": self.provider,
+                "reason": f"{key_var} not configured. Judge was not executed."
             }
 
         user_content = f"""CUSTOMER INQUIRY:
@@ -166,6 +238,77 @@ GENERATED AGENT RESPONSE:
 
 Evaluate this response according to the rubric and return the JSON object."""
 
+        if self.provider == "gemini":
+            return self._judge_gemini(user_content)
+        else:
+            return self._judge_openai(user_content)
+
+    def _judge_gemini(self, user_content: str) -> Dict[str, Any]:
+        """Call Google Gemini using official google-genai SDK with structured schema and retry backoff."""
+        import time
+        from google import genai
+        from google.genai import types
+
+        models_to_try = [self.model]
+        for fallback_m in ["gemini-3.7-flash", "gemini-3.5-flash"]:
+            if fallback_m not in models_to_try:
+                models_to_try.append(fallback_m)
+
+        last_err = None
+
+        for cur_model in models_to_try:
+            max_retries = 2
+            for attempt in range(max_retries):
+                try:
+                    if self._client is None:
+                        self._client = genai.Client(api_key=self.api_key)
+
+                    cfg = types.GenerateContentConfig(
+                        system_instruction=JUDGE_SYSTEM_PROMPT,
+                        temperature=0.0,
+                        response_mime_type="application/json",
+                        response_schema=JudgeEvaluationScore,
+                    )
+
+                    response = self._client.models.generate_content(
+                        model=cur_model,
+                        contents=user_content,
+                        config=cfg,
+                    )
+
+                    raw_text = response.text.strip()
+                    parsed = json.loads(raw_text)
+                    validated = JudgeEvaluationScore(**parsed)
+                    result = validated.model_dump()
+                    result["status"] = "ok"
+                    result["measured"] = True
+                    result["provider"] = "gemini"
+                    result["model"] = cur_model
+                    if self.model != cur_model:
+                        print(f"    [Model Notice] Switched judge model from {self.model} to {cur_model} due to free-tier quota.")
+                        self.model = cur_model
+                    return result
+                except Exception as e:
+                    last_err = e
+                    err_str = str(e)
+                    # If daily free tier quota is exhausted (20 RPD cap), break immediately to try next model
+                    if "GenerateRequestsPerDayPerProjectPerModel-FreeTier" in err_str or "quotaValue': '20'" in err_str:
+                        break
+                    if attempt < max_retries - 1 and any(code in err_str for code in ["503", "429", "UNAVAILABLE", "RESOURCE_EXHAUSTED"]):
+                        time.sleep(2 * (attempt + 1))
+                        continue
+                    break
+
+        return {
+            "status": "error",
+            "measured": False,
+            "provider": "gemini",
+            "model": self.model,
+            "reason": f"Gemini Judge request failed: {str(last_err)}"
+        }
+
+    def _judge_openai(self, user_content: str) -> Dict[str, Any]:
+        """Call OpenAI compatible endpoint with JSON object format."""
         payload = {
             "model": self.model,
             "messages": [
@@ -190,15 +333,21 @@ Evaluate this response according to the rubric and return the JSON object."""
             with urllib.request.urlopen(req, timeout=20) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
                 content = data["choices"][0]["message"]["content"]
-                result = json.loads(content)
+                parsed = json.loads(content)
+                validated = JudgeEvaluationScore(**parsed)
+                result = validated.model_dump()
                 result["status"] = "ok"
                 result["measured"] = True
+                result["provider"] = "openai"
+                result["model"] = self.model
                 return result
         except Exception as e:
             return {
                 "status": "error",
                 "measured": False,
-                "reason": f"LLM Judge request failed: {str(e)}"
+                "provider": "openai",
+                "model": self.model,
+                "reason": f"OpenAI Judge request failed: {str(e)}"
             }
 
 
@@ -269,21 +418,7 @@ def compute_judge_human_agreement_from_files(
     human_ratings_path: str = "data/human_response_quality_template.csv",
     judge_ratings_path: Optional[str] = None
 ) -> Dict[str, Any]:
-    """Read genuine human ratings and genuine judge ratings, match examples, and compute agreement metrics.
-
-    Requirements:
-    1. Reads genuine human ratings from human_ratings_path.
-    2. Reads genuine LLM judge ratings from judge_ratings_path (or evaluates via configured judge).
-    3. Matches the same examples by tweet_id or customer text.
-    4. Calculates quadratic weighted Cohen's kappa.
-    5. Calculates Spearman correlation.
-    6. Reports sample count.
-    7. Reports 'Not measured' when ratings are absent or blank.
-
-    DOES NOT create synthetic ratings.
-    """
-    import pandas as pd
-
+    """Read genuine human ratings and genuine judge ratings, match examples, and compute agreement metrics."""
     print("=" * 80)
     print("JUDGE-HUMAN AGREEMENT MEASUREMENT ENGINE")
     print("=" * 80)
@@ -310,24 +445,35 @@ def compute_judge_human_agreement_from_files(
             "spearman_rho": None
         }
 
-    # Identify rating column
+    if (not os.path.exists(human_ratings_path) or human_ratings_path == "data/human_response_quality_template.csv"):
+        alt_human = os.path.join("data", "evaluation", "human_review_27.csv")
+        if os.path.exists(alt_human):
+            try:
+                test_df = pd.read_csv(alt_human)
+                for col in ["Overall Quality", "overall_quality", "overall"]:
+                    if col in test_df.columns and test_df[col].notna().sum() > 0:
+                        human_ratings_path = alt_human
+                        df_human = test_df
+                        break
+            except Exception:
+                pass
+
     overall_col = None
-    for col in ["human_overall", "overall", "rating", "human_rating"]:
+    for col in ["human_overall", "overall", "rating", "human_rating", "Overall Quality", "overall_quality"]:
         if col in df_human.columns:
             overall_col = col
             break
 
     if not overall_col:
-        print(f"[Notice] Rating column ('human_overall') not found in '{human_ratings_path}'.")
+        print(f"[Notice] Rating column ('human_overall' or 'Overall Quality') not found in '{human_ratings_path}'.")
         return {
             "status": "Not measured",
-            "reason": "Human rating column ('human_overall') not found.",
+            "reason": "Human rating column ('human_overall' or 'Overall Quality') not found.",
             "sample_size": 0,
             "cohen_kappa_weighted": None,
             "spearman_rho": None
         }
 
-    # Extract valid human ratings (numeric 1-5 scale)
     df_human["_rating_clean"] = pd.to_numeric(df_human[overall_col], errors="coerce")
     rated_human = df_human[df_human["_rating_clean"].notna() & (df_human["_rating_clean"] >= 1) & (df_human["_rating_clean"] <= 5)]
 
@@ -338,24 +484,32 @@ def compute_judge_human_agreement_from_files(
         print("\n[RESULT: NOT MEASURED]")
         print("All human rating columns in the template are currently blank.")
         print("In accordance with scientific integrity guidelines, NO FAKE RATINGS ARE CREATED.")
-        print("Annotators must rate the examples in 'data/human_response_quality_template.csv' (1-5 scale) to measure agreement.")
         print("=" * 80)
         return {
             "status": "Not measured",
-            "reason": "Human ratings columns are blank. Genuine human review has not yet occurred.",
+            "reason": "Human ratings columns are blank. Genuine human review of response quality has not yet occurred.",
             "sample_size": 0,
             "cohen_kappa_weighted": None,
             "spearman_rho": None
         }
 
-    # Load judge ratings
+    if judge_ratings_path is None or not os.path.exists(judge_ratings_path):
+        for candidate in [
+            os.path.join("data", "evaluation", "gemini_judge_evaluations.csv"),
+            os.path.join("data", "evaluation", "llm_judge_results.json")
+        ]:
+            if os.path.exists(candidate):
+                judge_ratings_path = candidate
+                break
+
     judge_scores_map: Dict[str, float] = {}
     if judge_ratings_path and os.path.exists(judge_ratings_path):
         try:
             if judge_ratings_path.endswith(".json"):
                 with open(judge_ratings_path, "r", encoding="utf-8") as f:
                     jdata = json.load(f)
-                for item in jdata:
+                items = jdata.get("detailed_evaluations", jdata if isinstance(jdata, list) else [])
+                for item in items:
                     tid = str(item.get("tweet_id") or item.get("prompt") or "").strip()
                     score = item.get("scores", {}).get("overall") or item.get("overall")
                     if tid and score is not None:
@@ -370,12 +524,10 @@ def compute_judge_human_agreement_from_files(
         except Exception as e:
             print(f"[Warning] Could not parse judge ratings file: {e}")
     else:
-        # Check if judge is configured
         judge = LLMJudge()
         if not judge.is_configured:
             print("\n[RESULT: NOT MEASURED]")
-            print("Human ratings are present, but LLM Judge is unconfigured (LLM_JUDGE_API_KEY not set).")
-            print("Cannot compute agreement without genuine judge outputs.")
+            print("Human ratings are present, but LLM Judge is unconfigured.")
             print("=" * 80)
             return {
                 "status": "Not measured",
@@ -385,11 +537,10 @@ def compute_judge_human_agreement_from_files(
                 "spearman_rho": None
             }
 
-    # Match examples by tweet_id or text
     pairs = []
     for _, row in rated_human.iterrows():
         tid = str(row.get("tweet_id", "")).strip()
-        ctext = str(row.get("customer_text", "")).strip()
+        ctext = str(row.get("customer_query", row.get("customer_text", ""))).strip()
         h_score = float(row["_rating_clean"])
 
         j_score = None
@@ -422,25 +573,82 @@ def compute_judge_human_agreement_from_files(
     print(f"  Quadratic Weighted Kappa  : {agreement['cohen_kappa_weighted']}")
     print(f"  Spearman Correlation (rho): {agreement['spearman_rho']}")
     print("=" * 80)
+
+    if agreement.get("status") == "Measured":
+        judge_res_path = os.path.join("data", "evaluation", "llm_judge_results.json")
+        if os.path.exists(judge_res_path):
+            try:
+                with open(judge_res_path, "r", encoding="utf-8") as f:
+                    jres = json.load(f)
+                jres["human_agreement"] = agreement
+                with open(judge_res_path, "w", encoding="utf-8") as f:
+                    json.dump(jres, f, indent=2)
+                print(f"Updated '{judge_res_path}' with measured human agreement.")
+            except Exception as e:
+                print(f"[Warning] Could not update {judge_res_path}: {e}")
+
+        master_path = os.path.join("data", "evaluation", "master_evaluation_summary.json")
+        if os.path.exists(master_path):
+            try:
+                with open(master_path, "r", encoding="utf-8") as f:
+                    mres = json.load(f)
+                mres["judge_human_agreement"] = agreement
+                with open(master_path, "w", encoding="utf-8") as f:
+                    json.dump(mres, f, indent=2)
+                print(f"Updated '{master_path}' with measured judge-human agreement.")
+            except Exception as e:
+                print(f"[Warning] Could not update {master_path}: {e}")
+
     return agreement
 
+
+def select_golden_evaluation_subset(
+    golden_path: str = "golden_set.csv",
+    sample_size: int = 40
+) -> List[Dict[str, Any]]:
+    """Select a stratified, manageable subset across all 11 intent classes from the final golden set."""
+    if not os.path.exists(golden_path):
+        alt = os.path.join("data", "golden_set.csv")
+        if os.path.exists(alt):
+            golden_path = alt
+        else:
+            return []
+
+    df = pd.read_csv(golden_path)
+    if len(df) == 0:
+        return []
+
+    # Target roughly sample_size // 11 examples per intent
+    intents = df["intent"].unique()
+    per_intent = max(1, sample_size // len(intents))
+
+    selected = []
+    for intent_name, group in df.groupby("intent"):
+        take_n = min(len(group), per_intent + (1 if len(selected) + len(group.head(per_intent + 1)) <= sample_size else 0))
+        selected.extend(group.head(take_n).to_dict("records"))
+
+    # If still below sample_size, fill from remaining
+    if len(selected) < sample_size:
+        seen_ids = {str(x.get("tweet_id")) for x in selected}
+        for _, row in df.iterrows():
+            if str(row.get("tweet_id")) not in seen_ids:
+                selected.append(row.to_dict())
+                seen_ids.add(str(row.get("tweet_id")))
+                if len(selected) >= sample_size:
+                    break
+
+    return selected[:sample_size]
 
 
 def generate_human_quality_rating_template(
     pipeline: Optional[SupportAgentPipeline] = None,
     output_path: str = "data/human_response_quality_template.csv"
 ) -> str:
-    """Generate a clean annotation template containing pipeline outputs for the 11 verified human golden queries.
-
-    The template leaves human score columns blank so human raters can independently annotate.
-    Includes reviewer_id and timestamp metadata columns.
-    """
-    import pandas as pd
-
+    """Generate a clean annotation template containing pipeline outputs for human golden queries."""
     if pipeline is None:
         pipeline = SupportAgentPipeline()
 
-    golden_path = "golden_set.csv"
+    golden_path = "golden_set.csv" if os.path.exists("golden_set.csv") else os.path.join("data", "golden_set.csv")
     if not os.path.exists(golden_path):
         return ""
 
@@ -451,12 +659,12 @@ def generate_human_quality_rating_template(
         tweet_id = row.get("tweet_id", "")
         customer_text = str(row.get("customer_text", "")).strip()
 
-        # Run pipeline
         res = pipeline.process(customer_text)
         gen_text = res["final_response"]
         retrieved = ""
         if res.get("retrieved_cases"):
-            retrieved = res["retrieved_cases"][0].get("support_text", "")
+            rc = res["retrieved_cases"][0]
+            retrieved = rc.get("support_response") or rc.get("document") or rc.get("support_text") or ""
 
         records.append({
             "tweet_id": tweet_id,
@@ -465,10 +673,8 @@ def generate_human_quality_rating_template(
             "is_escalated": res.get("is_escalated", False),
             "generated_response": gen_text,
             "retrieved_evidence": retrieved[:200],
-            # Reviewer audit metadata
             "reviewer_id": "",
             "timestamp": "",
-            # Human rating columns (1-5 Likert scale) left blank for genuine human evaluation
             "human_groundedness": "",
             "human_relevance": "",
             "human_actionability": "",
@@ -483,77 +689,133 @@ def generate_human_quality_rating_template(
     return output_path
 
 
-
 def run_llm_judge_evaluation(
     pipeline: Optional[SupportAgentPipeline] = None,
+    provider: Optional[str] = None,
     api_key: Optional[str] = None,
-    model: str = "gpt-4o-mini"
+    model: Optional[str] = None,
+    subset_size: int = 40
 ) -> Dict[str, Any]:
-    """Execute LLM-as-a-judge evaluation suite or report honest unconfigured status."""
+    """Execute LLM-as-a-judge evaluation suite using Gemini 3.8 Flash (or OpenAI) or report honest unconfigured status."""
     print("=" * 80)
     print("LLM-AS-A-JUDGE RESPONSE QUALITY EVALUATION")
     print("=" * 80)
 
-    judge = LLMJudge(api_key=api_key, model=model)
+    judge = LLMJudge(provider=provider, api_key=api_key, model=model)
 
+    print(f"Provider: {judge.provider.upper()}")
+    print(f"Model: {judge.model}")
     print(f"LLM Judge Configured: {judge.is_configured}")
+
     if not judge.is_configured:
+        key_var = "GEMINI_API_KEY" if judge.provider == "gemini" else "LLM_JUDGE_API_KEY"
         print("\n" + "~" * 80)
-        print("[LLM JUDGE STATUS: UNCONFIGURED / NOT MEASURED]")
-        print("No LLM API key detected (set LLM_JUDGE_API_KEY to enable).")
+        print(f"[LLM JUDGE STATUS: UNCONFIGURED / NOT MEASURED]")
+        print(f"No API key detected (set {key_var} in environment to enable).")
         print("In accordance with scientific integrity guidelines, NO FAKE SCORES ARE GENERATED.")
-        print("Deterministic guardrails (280 chars, PII safety, actionability) are the active")
-        print("measured metrics in this offline evaluation environment.")
+        print("Deterministic guardrails (280 chars, PII safety, actionability) remain active.")
         print("~" * 80)
 
         agreement = calculate_judge_human_agreement([], [])
 
-        # Ensure rating template exists for future human annotation
-        template_path = generate_human_quality_rating_template(pipeline=pipeline)
-        if template_path:
-            print(f"\n[Human Annotation Template Created]: {template_path}")
-            print("  Contains 11 pipeline replies with blank columns for human annotators.")
-
-        return {
+        ret_dict = {
             "status": "Not measured",
             "measured": False,
+            "provider": judge.provider,
+            "model": judge.model,
             "judge_configured": False,
             "judge_scores": None,
             "human_agreement": agreement,
             "rubric": RUBRIC_DESCRIPTION,
-            "reason": "LLM_JUDGE_API_KEY environment variable not set."
+            "reason": f"{key_var} environment variable not set."
         }
 
-    # If configured, run judge across benchmark
+        out_dir = os.path.join("data", "evaluation")
+        os.makedirs(out_dir, exist_ok=True)
+        out_file = os.path.join(out_dir, "llm_judge_results.json")
+        try:
+            with open(out_file, "w", encoding="utf-8") as f:
+                json.dump(ret_dict, f, indent=2)
+            print(f"LLM Judge results saved to '{out_file}'.")
+        except Exception as e:
+            print(f"[Warning] Could not save LLM judge results: {e}")
+
+        return ret_dict
+
+    # If configured, run judge across stratified golden set subset
     if pipeline is None:
         pipeline = SupportAgentPipeline()
 
-    from src.evaluation.eval_response import BENCHMARK_PROMPTS
+    golden_subset = select_golden_evaluation_subset(sample_size=subset_size)
+    if not golden_subset:
+        from src.evaluation.eval_response import BENCHMARK_PROMPTS
+        golden_subset = [{"tweet_id": f"prompt_{i}", "customer_text": p["text"]} for i, p in enumerate(BENCHMARK_PROMPTS)]
 
-    print(f"\nEvaluating {len(BENCHMARK_PROMPTS)} stratified benchmark queries using model '{model}'...")
+    print(f"\nEvaluating {len(golden_subset)} stratified golden queries using {judge.provider.upper()} ({judge.model})...")
     results = []
-    for item in BENCHMARK_PROMPTS:
-        res = pipeline.process(item["text"])
-        evidence = res["retrieved_cases"][0]["support_text"] if res.get("retrieved_cases") else None
+    detailed_rows = []
+
+    for idx, item in enumerate(golden_subset, start=1):
+        ctext = item.get("customer_text", "")
+        tid = item.get("tweet_id", f"sample_{idx}")
+
+        res = pipeline.process(ctext)
+        evidence = None
+        if res.get("retrieved_cases"):
+            rc = res["retrieved_cases"][0]
+            evidence = rc.get("support_response") or rc.get("document") or rc.get("support_text")
+
         judge_res = judge.judge_single(
-            customer_text=item["text"],
+            customer_text=ctext,
             generated_response=res["final_response"],
             retrieved_context=evidence,
             intent=res.get("intent"),
             is_escalated=res.get("is_escalated", False)
         )
-        results.append({
-            "prompt": item["text"],
-            "response": res["final_response"],
+
+        status_str = "OK" if judge_res.get("status") == "ok" else "ERR"
+        ov = judge_res.get("overall", "N/A")
+        print(f"  [{idx:02d}/{len(golden_subset)}] Tweet {tid} -> Score: {ov} ({status_str})")
+
+        eval_record = {
+            "tweet_id": tid,
+            "customer_text": ctext,
+            "intent": res.get("intent"),
+            "is_escalated": res.get("is_escalated", False),
+            "generated_response": res["final_response"],
+            "retrieved_context": evidence[:150] if evidence else "",
             "scores": judge_res
-        })
+        }
+        results.append(eval_record)
+
+        if judge_res.get("status") == "ok":
+            detailed_rows.append({
+                "tweet_id": tid,
+                "customer_text": ctext,
+                "intent": res.get("intent"),
+                "is_escalated": res.get("is_escalated", False),
+                "generated_response": res["final_response"],
+                "groundedness": judge_res.get("groundedness"),
+                "relevance": judge_res.get("relevance"),
+                "actionability": judge_res.get("actionability"),
+                "safety": judge_res.get("safety"),
+                "tone": judge_res.get("tone"),
+                "overall": judge_res.get("overall"),
+                "reason": judge_res.get("reason", "")
+            })
+        import time
+        time.sleep(1.2)
 
     valid_scores = [r["scores"] for r in results if r["scores"].get("status") == "ok"]
     if not valid_scores:
+        err_msg = results[0]["scores"].get("reason", "All judge API calls failed.") if results else "No evaluations completed."
+        print(f"\n[Error] {err_msg}")
         return {
             "status": "Error",
             "measured": False,
-            "reason": "Judge API calls failed."
+            "provider": judge.provider,
+            "model": judge.model,
+            "reason": err_msg
         }
 
     avg_groundedness = float(np.mean([s["groundedness"] for s in valid_scores]))
@@ -563,8 +825,8 @@ def run_llm_judge_evaluation(
     avg_tone = float(np.mean([s["tone"] for s in valid_scores]))
     avg_overall = float(np.mean([s["overall"] for s in valid_scores]))
 
-    print("-" * 80)
-    print("LLM JUDGE BENCHMARK SCORES (1-5 Scale):")
+    print("\n" + "-" * 80)
+    print(f"{judge.provider.upper()} ({judge.model}) BENCHMARK SCORES (1-5 Scale, N={len(valid_scores)}):")
     print(f"  Groundedness : {avg_groundedness:.2f} / 5.0")
     print(f"  Relevance    : {avg_relevance:.2f} / 5.0")
     print(f"  Actionability: {avg_actionability:.2f} / 5.0")
@@ -573,12 +835,17 @@ def run_llm_judge_evaluation(
     print(f"  Overall      : {avg_overall:.2f} / 5.0")
     print("=" * 80)
 
-    agreement = calculate_judge_human_agreement([], [])
+    # Check agreement with human ratings
+    agreement = compute_judge_human_agreement_from_files(
+        human_ratings_path="data/human_response_quality_template.csv"
+    )
 
-    return {
+    res = {
         "status": "Measured",
         "measured": True,
         "judge_configured": True,
+        "provider": judge.provider,
+        "model": judge.model,
         "sample_size": len(valid_scores),
         "scores": {
             "groundedness": round(avg_groundedness, 2),
@@ -588,18 +855,64 @@ def run_llm_judge_evaluation(
             "tone": round(avg_tone, 2),
             "overall": round(avg_overall, 2)
         },
+        "detailed_evaluations": results,
         "human_agreement": agreement
     }
+
+    out_dir = os.path.join("data", "evaluation")
+    os.makedirs(out_dir, exist_ok=True)
+    out_file = os.path.join(out_dir, "llm_judge_results.json")
+    detailed_csv = os.path.join(out_dir, "gemini_judge_evaluations.csv")
+
+    try:
+        with open(out_file, "w", encoding="utf-8") as f:
+            json.dump(res, f, indent=2)
+        print(f"LLM Judge results saved to '{out_file}'.")
+    except Exception as e:
+        print(f"[Warning] Could not save LLM judge JSON: {e}")
+
+    if detailed_rows:
+        try:
+            pd.DataFrame(detailed_rows).to_csv(detailed_csv, index=False, encoding="utf-8-sig")
+            print(f"Detailed query-by-query evaluations saved to '{detailed_csv}'.")
+        except Exception as e:
+            print(f"[Warning] Could not save evaluations CSV: {e}")
+
+    # Update master_evaluation_summary.json
+    master_path = os.path.join("data", "evaluation", "master_evaluation_summary.json")
+    if os.path.exists(master_path):
+        try:
+            with open(master_path, "r", encoding="utf-8") as f:
+                master_data = json.load(f)
+            master_data["llm_judge"] = {
+                "status": "Measured",
+                "provider": judge.provider,
+                "model": judge.model,
+                "sample_size": len(valid_scores),
+                "scores": res["scores"]
+            }
+            master_data["judge_human_agreement"] = agreement
+            if "response" in master_data:
+                master_data["response"]["llm_judge_score"] = f"{avg_overall:.2f} / 5.0 ({judge.model})"
+            with open(master_path, "w", encoding="utf-8") as f:
+                json.dump(master_data, f, indent=2)
+            print(f"Master evaluation summary updated with live LLM Judge scores at '{master_path}'.")
+        except Exception as e:
+            print(f"[Warning] Could not update master evaluation summary: {e}")
+
+    return res
 
 
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(description="LLM-as-a-Judge Response Quality & Human Agreement Harness")
+    parser.add_argument("--provider", type=str, choices=["gemini", "openai"], default=None, help="LLM judge provider ('gemini' or 'openai')")
+    parser.add_argument("--model", type=str, default=None, help="Model name (default: gemini-3.8-flash for gemini, gpt-4o-mini for openai)")
+    parser.add_argument("--subset-size", type=int, default=40, help="Number of golden set examples to evaluate (default: 40)")
     parser.add_argument("--calculate-agreement", action="store_true", help="Calculate quadratic weighted Kappa and Spearman correlation between human and judge ratings")
     parser.add_argument("--human-file", type=str, default="data/human_response_quality_template.csv", help="Path to human ratings CSV file")
     parser.add_argument("--judge-file", type=str, default=None, help="Path to LLM judge ratings JSON or CSV file (optional)")
     parser.add_argument("--generate-template", action="store_true", help="Generate fresh human quality rating template CSV")
-    parser.add_argument("--model", type=str, default="gpt-4o-mini", help="LLM judge model name (default: gpt-4o-mini)")
 
     args = parser.parse_args()
 
@@ -612,5 +925,8 @@ if __name__ == "__main__":
         tpath = generate_human_quality_rating_template()
         print(f"Generated human response quality template at: {tpath}")
     else:
-        run_llm_judge_evaluation(model=args.model)
-
+        run_llm_judge_evaluation(
+            provider=args.provider,
+            model=args.model,
+            subset_size=args.subset_size
+        )

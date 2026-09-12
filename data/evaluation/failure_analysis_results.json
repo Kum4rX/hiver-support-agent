@@ -1,0 +1,128 @@
+{
+  "diagnostic_edge_cases": [
+    {
+      "category": "Multi-Intent Ambiguity",
+      "query": "My iPhone battery dies in 2 hours and my WiFi also won't connect to the router.",
+      "predicted_intent": "CONNECTIVITY",
+      "secondary_intent": "BATTERY_POWER",
+      "is_out_of_domain": false,
+      "is_escalated": false,
+      "top_similarity": 0.652,
+      "final_response": "We can help with both your Wi-Fi/network connectivity and battery life. First, let's work together to figure out what is causing your battery to drain so quickly. join us in dm with more detail. Let us know how that goes, and we can look into the battery life next!",
+      "response_length": 265
+    },
+    {
+      "category": "Heavy Slang & Typos",
+      "query": "yo my fon iz glitchin super bad nd battry dyin af after dat update fix diz",
+      "predicted_intent": "DEVICE_PERFORMANCE",
+      "secondary_intent": null,
+      "is_out_of_domain": false,
+      "is_escalated": false,
+      "top_similarity": 0.4418,
+      "final_response": "We want your device running smoothly and are glad to help. We'd be happy to look this over with you. Please meet us in DM so we may gather information, and better assist. Let us know how it goes!",
+      "response_length": 195
+    },
+    {
+      "category": "Safety Boundary - Subtle Heat vs Hazard",
+      "query": "My iPhone feels a bit warm when playing games for an hour.",
+      "predicted_intent": "HOW_TO_OTHER",
+      "secondary_intent": null,
+      "is_out_of_domain": false,
+      "is_escalated": false,
+      "top_similarity": 0.6573,
+      "final_response": "We'd be happy to help answer your question. You're in the right place; we'll do all we can to help. To start, what's the exact iOS version currently installed? Let us know how it goes!",
+      "response_length": 184
+    },
+    {
+      "category": "Safety Boundary - Explicit Hazard",
+      "query": "My battery is swelling and pushing the screen up, and I smell burning plastic.",
+      "predicted_intent": "BATTERY_POWER",
+      "secondary_intent": "DISPLAY_AUDIO_CAMERA",
+      "is_out_of_domain": false,
+      "is_escalated": true,
+      "top_similarity": 0.0,
+      "final_response": "Safety Alert: Please immediately disconnect your device from charging and power. Our Hardware Safety Team has been notified and will assist you urgently.",
+      "response_length": 153
+    },
+    {
+      "category": "Out-of-Domain / Non-Apple Inquiries",
+      "query": "Can you help me fix the blue screen of death on my Windows 11 Dell laptop?",
+      "predicted_intent": "OUT_OF_DOMAIN",
+      "secondary_intent": null,
+      "is_out_of_domain": true,
+      "is_escalated": false,
+      "top_similarity": 0.0,
+      "final_response": "We provide support for Apple products and services. For help with Windows 11, please contact the manufacturer's official support team. Let us know if you need help with an Apple device!",
+      "response_length": 185
+    },
+    {
+      "category": "Ultra-Short / Under-Specified Query",
+      "query": "It's broken please fix.",
+      "predicted_intent": "HOW_TO_OTHER",
+      "secondary_intent": null,
+      "is_out_of_domain": false,
+      "is_escalated": false,
+      "top_similarity": 0.5229,
+      "final_response": "We'd be happy to help answer your question. We're here to help. Broken in what way? Let us know how it goes!",
+      "response_length": 108
+    },
+    {
+      "category": "High-Frustration / Impending Escalation",
+      "query": "This is the third time my phone broke this month, your products are garbage! Talk to a manager!",
+      "predicted_intent": "HOW_TO_OTHER",
+      "secondary_intent": null,
+      "is_out_of_domain": false,
+      "is_escalated": true,
+      "top_similarity": 0.0,
+      "final_response": "Thank you for contacting us. Your request has been escalated to a senior support specialist who will follow up with you directly.",
+      "response_length": 129
+    }
+  ],
+  "top_5_real_golden_set_failures": [
+    {
+      "rank": 1,
+      "tweet_id": "2121055",
+      "customer_text": "11.0.3 giving me feeling like i'm using android phone..battery draining too fast as compared to ios 10.3.3. gets hot when put on charge. IOS 10.3.3 was best according to me. using iphone se",
+      "ground_truth": "BATTERY_POWER",
+      "predicted": "OUT_OF_DOMAIN",
+      "root_cause": "Metaphorical / Comparative Platform Mention",
+      "analysis": "The customer used 'android phone' figuratively to describe poor experience on their iPhone SE. The deterministic Out-of-Domain keyword guard fired on 'android' before checking device context, inappropriately rejecting an authentic AppleSupport customer."
+    },
+    {
+      "rank": 2,
+      "tweet_id": "2425815",
+      "customer_text": "My computer charger doesn't work very well (the cord was chewed by my cat) only works if the cord is held at a specific angle, and if it disconnects my computer just shuts off. But I can turn it back on and it's capable of running on battery power for a few hours. whyyyyyy",
+      "ground_truth": "DEVICE_PERFORMANCE",
+      "predicted": "BATTERY_POWER",
+      "root_cause": "Hardware Power Delivery vs Battery Health Disambiguation",
+      "analysis": "The customer described a severed/chewed MagSafe charging cable causing sudden power cuts. Keyword rules weighted 'charger' and 'battery power' heavily, classifying as BATTERY_POWER rather than a physical peripheral/hardware power fault."
+    },
+    {
+      "rank": 3,
+      "tweet_id": "1645797",
+      "customer_text": "my data wheel will not stop spinning. All apps closed. Good connection to WiFi and cellular. Please help",
+      "ground_truth": "DEVICE_PERFORMANCE",
+      "predicted": "CONNECTIVITY",
+      "root_cause": "Negated Contextual Cues and Network Diagnostics",
+      "analysis": "The customer stated 'Good connection to WiFi and cellular' to eliminate network connectivity as the root cause of an endless spinning loading wheel. Bag-of-words and keyword heuristics saw 'WiFi' and 'cellular' and erroneously predicted CONNECTIVITY."
+    },
+    {
+      "rank": 4,
+      "tweet_id": "2894808",
+      "customer_text": "My bluetooth was off, i checked (pull down top right) and I had been getting notification sound like message coming through, but with no alert on screen or in banner. What's up with that?",
+      "ground_truth": "CONNECTIVITY",
+      "predicted": "CALLS_COMMUNICATION",
+      "root_cause": "Polysemous Symptom Overlap (Notifications vs Messages vs Audio Routing)",
+      "analysis": "The customer diagnosed bluetooth being off, but reported ghost notification sounds ('like message coming through'). Rule heuristics matched 'message' and routed to CALLS_COMMUNICATION, ignoring the bluetooth hardware state."
+    },
+    {
+      "rank": 5,
+      "tweet_id": "769556",
+      "customer_text": "iPhone call app all blurry & unusable after iOS 11 update. Can't make calls/access contacts",
+      "ground_truth": "DISPLAY_AUDIO_CAMERA",
+      "predicted": "CALLS_COMMUNICATION",
+      "root_cause": "Visual UI Rendering Failure vs Telephony Functionality",
+      "analysis": "The root defect is a graphical UI rendering glitch ('blurry & unusable') in the phone application. Strong telephony tokens ('make calls', 'call app') overrode the visual display bug category."
+    }
+  ]
+}

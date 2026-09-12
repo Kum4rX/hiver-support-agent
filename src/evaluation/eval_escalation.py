@@ -9,6 +9,7 @@ import sys
 import time
 from typing import Any, Dict, List
 import pandas as pd
+import numpy as np
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from src.models.escalation_engine import EscalationEngine
@@ -95,31 +96,122 @@ def evaluate_escalation_engine() -> Dict[str, Any]:
     recall = tp / (tp + fn) if (tp + fn) > 0 else 1.0
     precision = tp / (tp + fp) if (tp + fp) > 0 else 1.0
     specificity = tn / (tn + fp) if (tn + fp) > 0 else 1.0
+    f1 = 2 * precision * recall / (precision + recall) if (precision + recall) > 0 else 0.0
     avg_latency_us = total_eval_time / total
 
     print("-" * 75)
-    print("EVALUATION SUMMARY METRICS:")
+    print("CURATED TEST SUITE SUMMARY:")
     print(f"  Total Test Cases           : {total}")
-    print(f"  True Positives (Hazards)   : {tp}")
-    print(f"  True Negatives (Benign)    : {tn}")
+    print(f"  True Positives (Hazards)   : {tp} / {tp + fn}")
+    print(f"  True Negatives (Benign)    : {tn} / {tn + fp}")
     print(f"  False Positives (Over-esc) : {fp}")
     print(f"  False Negatives (Missed)   : {fn}")
     print(f"  Safety Recall (Target 100%): {recall * 100:.2f}%")
-    print(f"  Benign Precision           : {precision * 100:.2f}%")
+    print(f"  Precision                  : {precision * 100:.2f}%")
     print(f"  Specificity (True Neg Rate): {specificity * 100:.2f}%")
+    print(f"  F1-Score                   : {f1 * 100:.2f}%")
     print(f"  Overall Accuracy           : {accuracy * 100:.2f}%")
-    print(f"  Average Engine Latency     : {avg_latency_us:.2f} microseconds (µs)")
+    print(f"  Average Engine Latency     : {avg_latency_us:.2f} us")
     print("=" * 75)
 
-    return {
+    curated_metrics = {
+        "suite": "curated_hazard_tests",
         "total_cases": total,
         "tp": tp, "tn": tn, "fp": fp, "fn": fn,
         "accuracy": round(accuracy, 4),
         "safety_recall": round(recall, 4),
         "precision": round(precision, 4),
         "specificity": round(specificity, 4),
+        "f1": round(f1, 4),
         "avg_latency_us": round(avg_latency_us, 2)
     }
+
+    # -----------------------------------------------------------------------
+    # Golden Set Evaluation (200 In-The-Wild Human Confirmed Labels)
+    # -----------------------------------------------------------------------
+    golden_metrics = None
+    golden_path = "golden_set.csv"
+    if os.path.exists(golden_path):
+        try:
+            df = pd.read_csv(golden_path)
+            y_true = (df["escalation"].astype(str).str.lower() == "yes").tolist()
+            texts = df["customer_text"].tolist()
+
+            g_tp, g_fp, g_tn, g_fn = 0, 0, 0, 0
+            g_latencies = []
+
+            for text, true_esc in zip(texts, y_true):
+                st = time.perf_counter()
+                pred_esc = engine.evaluate(text)["is_escalated"]
+                g_latencies.append((time.perf_counter() - st) * 1_000_000)
+
+                if true_esc and pred_esc:
+                    g_tp += 1
+                elif not true_esc and not pred_esc:
+                    g_tn += 1
+                elif not true_esc and pred_esc:
+                    g_fp += 1
+                else:
+                    g_fn += 1
+
+            g_total = len(texts)
+            g_acc = (g_tp + g_tn) / g_total
+            g_rec = g_tp / (g_tp + g_fn) if (g_tp + g_fn) > 0 else 0.0
+            g_prec = g_tp / (g_tp + g_fp) if (g_tp + g_fp) > 0 else 0.0
+            g_spec = g_tn / (g_tn + g_fp) if (g_tn + g_fp) > 0 else 1.0
+            g_f1 = 2 * g_prec * g_rec / (g_prec + g_rec) if (g_prec + g_rec) > 0 else 0.0
+
+            print("\n" + "=" * 75)
+            print("GOLDEN SET IN-THE-WILD ESCALATION EVALUATION (N=200)")
+            print("=" * 75)
+            print(f"  Total Evaluated            : {g_total}")
+            print(f"  Human Escalated Cases      : {sum(y_true)} (Physical hazards, account security, legal)")
+            print(f"  Human Non-Escalated Cases  : {g_total - sum(y_true)}")
+            print(f"  True Positives (Detected)  : {g_tp} / {sum(y_true)}")
+            print(f"  True Negatives (Passed)    : {g_tn} / {g_total - sum(y_true)}")
+            print(f"  False Positives (Over-esc) : {g_fp}")
+            print(f"  False Negatives (Missed)   : {g_fn}")
+            print(f"  Safety Recall              : {g_rec * 100:.2f}%")
+            print(f"  Specificity (Zero Over-esc): {g_spec * 100:.2f}%")
+            print(f"  Precision                  : {g_prec * 100:.2f}%")
+            print(f"  F1-Score                   : {g_f1 * 100:.2f}%")
+            print(f"  Overall Accuracy           : {g_acc * 100:.2f}%")
+            print(f"  Mean Latency               : {float(np.mean(g_latencies)):.2f} us")
+            print("=" * 75)
+
+            golden_metrics = {
+                "suite": "golden_set_200_human",
+                "total_cases": g_total,
+                "human_escalated": sum(y_true),
+                "human_non_escalated": g_total - sum(y_true),
+                "tp": g_tp, "tn": g_tn, "fp": g_fp, "fn": g_fn,
+                "accuracy": round(g_acc, 4),
+                "safety_recall": round(g_rec, 4),
+                "precision": round(g_prec, 4),
+                "specificity": round(g_spec, 4),
+                "f1": round(g_f1, 4),
+                "avg_latency_us": round(float(np.mean(g_latencies)), 2)
+            }
+        except Exception as e:
+            print(f"[Warning] Could not evaluate golden set escalation: {e}")
+
+    output_results = {
+        "curated_suite": curated_metrics,
+        "golden_set_evaluation": golden_metrics
+    }
+
+    out_dir = os.path.join("data", "evaluation")
+    os.makedirs(out_dir, exist_ok=True)
+    out_file = os.path.join(out_dir, "escalation_evaluation_results.json")
+    try:
+        import json
+        with open(out_file, "w", encoding="utf-8") as f:
+            json.dump(output_results, f, indent=2)
+        print(f"Escalation results saved to '{out_file}'.")
+    except Exception as e:
+        print(f"[Warning] Could not save escalation results: {e}")
+
+    return curated_metrics
 
 
 if __name__ == "__main__":
