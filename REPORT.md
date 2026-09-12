@@ -13,9 +13,22 @@ The core design centers on a multi-stage deterministic and neural pipeline:
 6. **Grounded Response Generation** (Deterministic resolution extractor and brand synthesis engine operating 100% offline with optional pluggable LLM interfaces).
 7. **Response Guardrails** (Strict Twitter $\le 280$ character limit enforcement, PII protection, and safety override protocols).
 
+
+### Evaluation Taxonomy & Integrity Disclosures (Categories A–F)
+
+To preserve scientific integrity and prevent metric conflation, all empirical findings are categorized into six distinct evaluation tiers:
+
+- **Tier A — Verified Human-Labelled Benchmark**: Exactly 11 verified human labels in `golden_set.csv` (10 `BATTERY_POWER`, 1 `DEVICE_PERFORMANCE`). Used as an authentic small-sample pipeline sanity check.
+- **Tier B — Provisional / Auto-Labelled Exploratory Benchmark**: 189 candidate suggestions in `data/golden_evaluation_provisional.csv` (`label_source = "auto_provisional"`). Used strictly for pipeline smoke testing across all 11 intent classes; **never cited as authentic ground truth**.
+- **Tier C — Curated Safety Tests**: 21 adversarial and benign test queries (13 hazards, 8 benign) evaluating rule hierarchy recall. Not a natural customer distribution benchmark.
+- **Tier D — Retrieval Similarity Metrics**: Cosine similarity ($\ge 0.35$ relevance hit rate) over 65,239 pre-filtered document pairs. Measures dense vector proximity, **NOT human-annotated factual relevance**.
+- **Tier E — LLM Judge Results**: 6-dimension rubric (Groundedness, Relevance, Actionability, Safety, Tone, Policy Constraints) implemented in `src/evaluation/llm_judge.py`. Reported as **"Not measured"** when unconfigured without an API key.
+- **Tier F — Human Agreement Results**: Quadratic weighted Cohen's Kappa ($\kappa_w$) and Spearman rank correlation ($\rho$). Reported as **"Not measured"** because human quality rating columns in `data/human_response_quality_template.csv` are blank.
+
 ---
 
 ## 1. System Architecture
+
 
 ```
                        Customer Tweet
@@ -140,7 +153,7 @@ Customer safety and financial security are evaluated on a strict deterministic h
 4. **Legal / Regulatory (Severity: HIGH)**: Mentions of attorney, lawsuit, police report, FTC complaint.
 5. **Chronic Unresolved Frustration (Severity: MEDIUM)**: Explicit demand for supervisor, repeat failed repairs.
 
-### 3.1 Empirical Evaluation on Safety Benchmark:
+### 3.1 Empirical Evaluation on Curated Safety Test Suite:
 - **Total Test Cases**: 21 (13 safety/risk triggers + 8 benign queries)
 - **Safety Hazard Recall**: **100.00%** (13/13 hazards detected)
 - **Benign Precision / Specificity**: **100.00%** (8/8 benign queries passed without false alarms)
@@ -317,4 +330,10 @@ End-to-End Pipeline Latency      | Mean Latency             | 225.37 ms
 
 3. **External LLM Integration**:
    The response generator runs 100% offline and deterministic to ensure reproducibility, low latency (14.69 ms), and zero cost. For production deployments with rich multi-paragraph inquiries, an optional LLM synthesizer (e.g. Claude 3.5 Sonnet or Gemini 1.5 Pro) with strict length guardrails can be enabled.
+
+4. **Human Annotation & Agreement Procedures**:
+   - **Accelerated Golden Set Review**: Reviewers execute `python golden_reviewer.py --reviewer <name>`. The CLI presents the remaining 189 candidates from `data/golden_evaluation_provisional.csv` with a non-ground-truth warning banner. Reviewers can accept (`[Enter]`), change (`[1-11]`), escalate (`[e]`), or skip (`[s]`). All decisions write immediately to `golden_set.csv` (`label_source="human"`) and append audit metadata to `data/golden_annotation_audit.jsonl`.
+   - **Human Reply Quality Rating**: Reviewers fill in the blank 1–5 scoring columns in `data/human_response_quality_template.csv` across Groundedness, Relevance, Actionability, Safety, Tone, and Overall Quality.
+   - **Agreement Computation**: Execute `python src/evaluation/llm_judge.py --calculate-agreement` to compute quadratic weighted Cohen's Kappa and Spearman correlation once human ratings are present. When unrated, the harness truthfully reports "Not measured".
+
 

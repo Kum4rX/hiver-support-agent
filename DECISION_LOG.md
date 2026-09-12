@@ -97,4 +97,87 @@ This document records the key architectural decisions, trade-offs, and technical
 - **Consequences**:
   - *Pros*: Sub-50ms API responses after startup initialization; full pipeline transparency (confidence meters, risk badges, retrieved cases, stage durations).
   - *Cons*: Backend requires ~1.5 GB RAM to hold the index and model in memory.
+---
 
+## ADR-008: Inbound-Outbound Conversation Pair Extraction & Boilerplate Filtering
+
+- **Status**: Accepted
+- **Context**: The raw TWCS (Twitter Customer Support) dataset spans millions of multi-brand multi-turn tweets containing noisy chatter, user-to-user replies, and non-actionable boilerplate (e.g., *"We'd like to look into this with you, please DM us your serial number and iOS version."*). We needed to construct a focused, high-signal retrieval knowledge base for Apple customer support.
+- **Decision**: Filtered raw TWCS records exclusively to `@AppleSupport` interactions (`author_id = 'AppleSupport'`), isolated the initial inbound customer tweet and immediate outbound brand response pairs, and aggressively filtered out non-actionable redirect boilerplate (*"please DM us"*, *"send us a direct message"*, generic greetings) to construct `data/retrieval_documents.csv` containing 65,239 actionable pairs.
+- **Alternatives Considered**:
+  1. *Indexing entire multi-turn dialogue trees*: Retains conversational context but creates severe indexing overhead, noisy vector representations, and difficult alignment with single incoming customer tweets.
+  2. *Scraping official Apple Support Knowledge Base articles*: Provides high-quality documentation but lacks the colloquial Twitter phrasing, abbreviations, and concise step-by-step phrasing typical of customer inquiries.
+  3. *Unfiltered tweet pair indexing*: Keeps all 200k+ Apple pairs, but results in retrieving repetitive *"Please DM us"* canned links that provide zero self-service value to the customer.
+- **Why This Option Was Chosen**: Constructing a high-signal pair corpus filtered of boilerplate ensures that dense retrieval finds real, actionable diagnostic questions and solutions while reflecting authentic Twitter phrasing.
+- **Consequences**:
+  - *Pros*: High top-1 cosine similarity (**0.7510** on technical queries) and highly relevant extracted resolutions; avoids cluttering retrieval results with useless canned invitations to DM.
+  - *Cons*: Reduced corpus size compared to raw tweets; occasional historical solutions still reflect first-line triage inquiries rather than full multi-step tutorials.
+
+---
+
+## ADR-009: Dense Inner-Product Vector Search (`IndexFlatIP`) with Unit-Normalized Embeddings
+
+- **Status**: Accepted
+- **Context**: The system needs fast, exact vector similarity retrieval across 65,239 384-dimensional dense vectors (`sentence-transformers/all-MiniLM-L6-v2`) on standard CPU hardware without sacrificing recall or inducing runtime latency spikes.
+- **Decision**: Pre-normalized all document embeddings to unit L2 norm ($||v||_2 = 1.0$) upon indexing, normalize query vectors at runtime, and deploy FAISS `IndexFlatIP` (Exact Inner Product Search).
+- **Alternatives Considered**:
+  1. *Euclidean Distance (`IndexFlatL2`)*: Calculates $||u - v||_2$. Requires square-root and difference computations; geometric distances are less intuitive for threshold calibration than normalized cosine similarity.
+  2. *Approximate Nearest Neighbors (ANN via `IndexIVFFlat` or `IndexHNSWFlat`)*: Clustered partitioning or graph structures accelerate sub-linear search, but introduce recall loss (1-5% missed nearest neighbors), require hyperparameter tuning (`nprobe`, `efSearch`), and add memory overhead.
+  3. *Unnormalized Dot Product*: Susceptible to document length bias, where longer text vectors yield artificially inflated scores.
+- **Why This Option Was Chosen**: For unit L2-normalized vectors, the inner product is mathematically identical to cosine similarity: $\langle u, v \rangle = \cos(\theta)$, providing intuitive similarity scores bounded in $[-1, 1]$. Exact flat search over 65,239 384-dim vectors on CPU executes in **93.73 ms**, well within the interactive latency budget while guaranteeing 100% recall without clustering artifacts.
+- **Consequences**:
+  - *Pros*: Guaranteed 100% search recall; mathematically pure cosine similarity scores directly used for confidence thresholding; zero indexing hyperparameters to tune.
+  - *Cons*: Search latency scales linearly $O(N)$ with corpus size; requires strict runtime vector normalization (`vec / np.linalg.norm(vec)`).
+
+---
+
+## ADR-010: Conservative Retrieval Grounding Cutoff ($\ge 0.35$) with Out-of-Domain Bypassing
+
+- **Status**: Accepted
+- **Context**: Standard RAG (Retrieval-Augmented Generation) pipelines unconditionally retrieve the nearest vector neighbors regardless of query relevance. In customer support, retrieving against non-Apple inquiries (e.g., Windows 11, Samsung Galaxy) or critical safety hazards (e.g., smoking charger) can induce dangerous hallucinations or irrelevant advice.
+- **Decision**:
+  1. Enforced a conservative cosine similarity cutoff of **0.35** for factual grounding. If top retrieval similarity is $< 0.35$, the generator bypasses historical excerpts and falls back to safe intent-based diagnostic guidance.
+  2. Completely bypassed FAISS dense retrieval whenever `HybridIntentClassifier` detects `OUT_OF_DOMAIN` entities or `EscalationEngine` flags a `CRITICAL` physical safety hazard.
+- **Alternatives Considered**:
+  1. *Unconditional Top-K Grounding*: Always pass top-1 or top-3 historical snippets to the generator regardless of similarity score.
+  2. *LLM Prompt Grounding Guard*: Pass retrieved snippets into an LLM prompt with instructions to "ignore snippets if irrelevant".
+  3. *Soft/Dynamic Thresholding*: Dynamically shifting thresholds based on query length.
+- **Why This Option Was Chosen**: Hard similarity thresholding and pipeline short-circuiting prevent the system from injecting irrelevant historical Apple resolutions into out-of-domain or emergency queries. Bypassing retrieval for escalations saves ~94 ms of vector computation during safety-critical events.
+- **Consequences**:
+  - *Pros*: Zero risk of quoting Apple troubleshooting for non-Apple devices; immediate sub-millisecond escalation response times; eliminates hallucinated RAG noise on low-similarity queries.
+  - *Cons*: Highly idiosyncratic or poorly phrased in-domain queries scoring $< 0.35$ do not receive historical snippets, relying instead on generic category troubleshooting.
+
+---
+
+## ADR-011: Decoupled Offline-First Architecture for Optional LLM-as-a-Judge Evaluation
+
+- **Status**: Accepted
+- **Context**: The Hiver assignment requires an automated evaluation harness and an LLM-as-a-judge rubric for response quality, along with evidence of judge-human agreement. Mandating an external LLM API (OpenAI, Anthropic) for standard evaluation creates fragile dependencies on network connectivity, secret API keys, billing quotas, and external service availability.
+- **Decision**:
+  1. Architected `src/evaluation/llm_judge.py` as an opt-in evaluation module decoupled from the core agent pipeline.
+  2. If `LLM_JUDGE_API_KEY` is not set, the evaluation harness executes in offline mode and reports judge quality as **"Not measured"** rather than failing or fabricating synthetic scores.
+  3. Established a structured 6-dimension evaluation rubric (Groundedness, Relevance, Actionability, Safety, Tone, Policy Constraints on a 1–5 scale) with JSON schema enforcement.
+  4. Provided a standardized human annotation template (`data/human_response_quality_template.csv`) with reviewer provenance tracking and pre-implemented agreement calculation (quadratic weighted Cohen's Kappa and Spearman correlation) that truthfully reports "Not measured" until human annotations are provided.
+- **Alternatives Considered**:
+  1. *Hard dependency on OpenAI API*: Fail the evaluation script if `OPENAI_API_KEY` is missing.
+  2. *Fabricating synthetic judge scores*: Simulating LLM scores and agreement metrics to present a completed table in the report.
+  3. *Scalar single-score rubric*: Evaluating replies on a single 1–5 scale without granular sub-dimension scoring.
+- **Why This Option Was Chosen**: Preserves strict scientific integrity by never fabricating judge scores or correlation numbers, while ensuring the entire repository remains 100% runnable, testable, and auditable offline.
+- **Consequences**:
+  - *Pros*: Complete test suite and offline evaluation run deterministically with zero network calls and zero cost; evaluation report clearly separates measured deterministic metrics from unconfigured LLM evaluations.
+  - *Cons*: Empirical measurement of LLM judge scores and judge-human agreement requires an evaluator to provide an API key and complete human ratings.
+
+---
+
+## ADR-012: Frontend Single Source of Truth via FastAPI Runtime Endpoints
+
+- **Status**: Accepted
+- **Context**: The initial web frontend contained client-side mock engines (`analyzeSync`, `KNOWLEDGE_CORPUS`, `RECENT_RUNS`) that simulated agent analysis in the browser when the backend was unreachable. This simulated behavior risked presenting synthetic, inconsistent analysis to evaluators and masked backend connection issues.
+- **Decision**: Completely removed client-side simulation fallbacks from `frontend/services/api.ts` and UI views (`analyze.tsx`, `knowledge-base.tsx`, `evaluation.tsx`). Made the FastAPI backend (`backend/main.py`) the sole, strict runtime source of truth. If the backend is disconnected, the UI displays clear, honest error states (*"Backend Disconnected: Failed to connect to FastAPI backend at http://127.0.0.1:8000"*) rather than simulating analysis.
+- **Alternatives Considered**:
+  1. *Retaining client-side simulation as a graceful offline fallback*: Allows UI interaction without running the Python server, but produces fake latency metrics and synthetic responses divergent from the real pipeline.
+  2. *Embedding a lightweight ONNX model in WebAssembly*: Runs models in-browser, but cannot support the 65,239-document FAISS index due to browser memory limits.
+- **Why This Option Was Chosen**: Ensures that any evaluation, latency measurement, or output displayed in the UI strictly reflects the real Python AI pipeline, FAISS index, and escalation rules. Eliminates split-brain logic between client and server.
+- **Consequences**:
+  - *Pros*: Complete fidelity between web UI and underlying AI pipeline; honest error feedback when services are down; eliminates misleading client-side simulations.
+  - *Cons*: The React UI requires the FastAPI backend daemon running on port 8000 to function.

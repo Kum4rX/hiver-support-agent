@@ -138,22 +138,31 @@ Open **[http://localhost:5174](http://localhost:5174)** (or **[http://localhost:
   ```bash
   python demo_cli.py
   ```
-- **Golden Set Human Annotation Workflow**:
+- **Golden Set Human Annotation Workflow (Fast 1-Key CLI)**:
   ```bash
-  python golden_reviewer.py
+  # Launch accelerated review session with reviewer audit tracking
+  python golden_reviewer.py --reviewer "reviewer_name"
   ```
+  *Key ergonomics*: Press `[Enter]` or `[A]` to accept suggestion, `[1-11]` to change intent, `[E]` to escalate, `[S]` to skip, `[Q]` to save & quit. All reviews append with `label_source="human"` and write an audit record to `data/golden_annotation_audit.jsonl`.
+  
   Check annotation status & class distribution:
   ```bash
   python golden_reviewer.py --status
   ```
-  Verify output schema:
+  Validate schema and export clean dataset:
   ```bash
   python golden_reviewer.py --verify-schema
+  python golden_reviewer.py --export-clean
   ```
 - **Master Evaluation Benchmark Suite**:
   ```bash
   python src/evaluation/eval_all.py
   ```
+- **Judge-Human Agreement Engine**:
+  ```bash
+  python src/evaluation/llm_judge.py --calculate-agreement
+  ```
+
 
 ---
 
@@ -349,7 +358,7 @@ hiver-support-agent/
 
 ---
 
-## Optional LLM-as-a-Judge Evaluation
+## Optional LLM-as-a-Judge Evaluation & Human Agreement
 
 The evaluation harness includes an automated LLM-as-a-judge quality rubric in `src/evaluation/llm_judge.py` evaluating replies across 6 dimensions: **Groundedness**, **Relevance**, **Actionability**, **Safety**, **Tone**, and **Policy Constraints** (1–5 scale).
 
@@ -360,7 +369,14 @@ The evaluation harness includes an automated LLM-as-a-judge quality rubric in `s
   python src/evaluation/llm_judge.py
   ```
 - **Unconfigured Default**: Without `LLM_JUDGE_API_KEY`, the harness reports **"Not measured"** — no fake or synthetic judge scores are ever generated.
-- **Judge-Human Agreement**: The current verified Golden Set contains 11 samples with intent and escalation labels, but not independent human reply-quality ratings. A rating template has been generated at `data/human_response_quality_template.csv` for future human annotation; agreement metrics (quadratic weighted Cohen's Kappa & Spearman correlation) will compute automatically once human scores are provided.
+- **Judge-Human Agreement Engine**:
+  ```bash
+  python src/evaluation/llm_judge.py --calculate-agreement
+  ```
+  - Reads human ratings from `data/human_response_quality_template.csv` and compares against judge ratings.
+  - Matches examples by tweet ID / text.
+  - Computes quadratic weighted Cohen's Kappa ($\kappa_w$) and Spearman rank correlation ($\rho$).
+  - When rating columns are blank, it truthfully reports **"Not measured"** (sample size 0). No synthetic agreement statistics are ever fabricated.
 
 ---
 

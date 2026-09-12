@@ -22,16 +22,19 @@ import os
 import sys
 import json
 import re
-from typing import Dict, List, Set, Tuple, Optional
+from datetime import datetime, timezone
+from typing import Dict, List, Set, Tuple, Optional, Any
 import pandas as pd
 
 # Constants
 TARGET_COUNT = 200
 GOLDEN_SET_FILE = "golden_set.csv"
+PROVISIONAL_FILE = os.path.join("data", "golden_evaluation_provisional.csv")
 CANDIDATES_FILE = "golden_candidates.csv"
 CLEAN_PAIRS_FILE = os.path.join("data", "apple_support_pairs_clean.csv")
 SKIPPED_FILE = os.path.join("data", "golden_skipped.csv")
 SUMMARY_FILE = os.path.join("data", "golden_set_summary.json")
+AUDIT_LOG_FILE = os.path.join("data", "golden_annotation_audit.jsonl")
 
 INTENTS = [
     "BATTERY_POWER",
@@ -208,16 +211,80 @@ def update_summary(golden_df: pd.DataFrame, skipped_filepath: str = SKIPPED_FILE
     return summary
 
 
+def record_audit_log(
+    reviewer_id: str,
+    tweet_id: str,
+    customer_text: str,
+    suggested_intent: str,
+    final_intent: str,
+    action: str,
+    escalation: str,
+    escalation_reason: str,
+    label_source: str,
+    filepath: str = AUDIT_LOG_FILE
+) -> None:
+    """Record an audit trail log entry for a human annotation decision."""
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+    entry = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "reviewer_id": str(reviewer_id).strip(),
+        "tweet_id": str(tweet_id).strip(),
+        "customer_text": str(customer_text).strip(),
+        "suggested_intent": str(suggested_intent).strip(),
+        "final_intent": str(final_intent).strip(),
+        "action": action,
+        "escalation": str(escalation).strip().lower(),
+        "escalation_reason": str(escalation_reason).strip(),
+        "label_source": str(label_source).strip()
+    }
+    with open(filepath, "a", encoding="utf-8") as f:
+        f.write(json.dumps(entry) + "\n")
+
+
 def load_candidate_pool(
     reviewed_ids: Set[str],
     reviewed_texts: Set[str],
     skipped_ids: Set[str],
     skipped_texts: Set[str]
 ) -> List[Dict[str, Any]]:
-    """Build an ordered candidate pool from golden_candidates.csv, prioritizing underrepresented classes."""
+    """Build an ordered candidate pool prioritizing unreviewed provisional rows, then golden_candidates.csv."""
     candidates = []
+    queued_ids = set()
+    queued_texts = set()
 
-    # 1. Primary pool: golden_candidates.csv
+    # 1. Primary candidate pool: unreviewed provisional rows from data/golden_evaluation_provisional.csv
+    if os.path.exists(PROVISIONAL_FILE):
+        try:
+            df_prov = pd.read_csv(PROVISIONAL_FILE)
+            for _, row in df_prov.iterrows():
+                # Only take rows that are NOT already human verified
+                if str(row.get("label_source", "")).strip().lower() == "human":
+                    continue
+                tid = str(row.get("tweet_id", "")).strip()
+                ctext = str(row.get("customer_text", "")).strip()
+                if not tid or not ctext:
+                    continue
+                norm_text = normalize_text_for_dedup(ctext)
+                if tid in reviewed_ids or norm_text in reviewed_texts:
+                    continue
+                if tid in skipped_ids or norm_text in skipped_texts:
+                    continue
+                if tid in queued_ids or norm_text in queued_texts:
+                    continue
+
+                sugg = str(row.get("intent", "HOW_TO_OTHER")).strip()
+                candidates.append({
+                    "tweet_id": tid,
+                    "customer_text": ctext,
+                    "suggested_intent": sugg,
+                    "source": "golden_evaluation_provisional.csv"
+                })
+                queued_ids.add(tid)
+                queued_texts.add(norm_text)
+        except Exception as e:
+            print(f"[Warning] Could not read provisional candidates: {e}")
+
+    # 2. Secondary pool: golden_candidates.csv
     if os.path.exists(CANDIDATES_FILE):
         df_cand = pd.read_csv(CANDIDATES_FILE)
         id_col = "support_response" if "support_response" in df_cand.columns else "tweet_id"
@@ -230,6 +297,8 @@ def load_candidate_pool(
                 continue
             if tid in skipped_ids or norm_text in skipped_texts:
                 continue
+            if tid in queued_ids or norm_text in queued_texts:
+                continue
 
             sugg = str(row.get("suggested_intent", "HOW_TO_OTHER")).strip()
             candidates.append({
@@ -238,8 +307,10 @@ def load_candidate_pool(
                 "suggested_intent": sugg,
                 "source": "golden_candidates.csv"
             })
+            queued_ids.add(tid)
+            queued_texts.add(norm_text)
 
-    # 2. Fallback pool: apple_support_pairs_clean.csv if golden_candidates pool is low
+    # 3. Fallback pool: apple_support_pairs_clean.csv if candidate pool is low
     needed = TARGET_COUNT - len(reviewed_ids) + 20
     if len(candidates) < needed and os.path.exists(CLEAN_PAIRS_FILE):
         try:
@@ -259,7 +330,7 @@ def load_candidate_pool(
                         continue
                     if tid in skipped_ids or norm_text in skipped_texts:
                         continue
-                    if any(c["tweet_id"] == tid or normalize_text_for_dedup(c["customer_text"]) == norm_text for c in candidates):
+                    if tid in queued_ids or norm_text in queued_texts:
                         continue
 
                     sugg = clf.predict(ctext)
@@ -269,6 +340,8 @@ def load_candidate_pool(
                         "suggested_intent": sugg,
                         "source": "apple_support_pairs_clean.csv"
                     })
+                    queued_ids.add(tid)
+                    queued_texts.add(norm_text)
 
                     if len(candidates) >= needed + 100:
                         break
@@ -278,6 +351,7 @@ def load_candidate_pool(
             print(f"[Warning] Could not supplement candidates from clean pairs: {e}")
 
     return candidates
+
 
 
 def verify_schema(filepath: str = GOLDEN_SET_FILE) -> bool:
@@ -345,11 +419,62 @@ def print_status(filepath: str = GOLDEN_SET_FILE) -> None:
     print("=" * 75 + "\n")
 
 
-def run_interactive_annotation(target: int = TARGET_COUNT, filepath: str = GOLDEN_SET_FILE) -> None:
+def export_clean_golden_set(filepath: str = GOLDEN_SET_FILE) -> bool:
+    """Validate and export a clean golden_set.csv containing ONLY genuinely human-reviewed rows."""
+    print(f"\n--- Exporting Clean Golden Set from '{filepath}' ---")
+    if not os.path.exists(filepath):
+        print(f"[FAIL] '{filepath}' does not exist.")
+        return False
+
+    df = pd.read_csv(filepath)
+    initial_count = len(df)
+    print(f"Total input rows: {initial_count}")
+
+    # 1. Filter strictly for label_source == 'human'
+    human_mask = df["label_source"].astype(str).str.strip().str.lower() == "human"
+    df_clean = df[human_mask].copy()
+    if len(df_clean) < initial_count:
+        print(f"[Warning] Excluded {initial_count - len(df_clean)} non-human rows.")
+
+    # 2. Schema check
+    for col in SCHEMA_COLUMNS:
+        if col not in df_clean.columns:
+            df_clean[col] = ""
+
+    # 3. Deduplicate by tweet_id and customer_text
+    df_clean = df_clean.drop_duplicates(subset=["tweet_id"], keep="first")
+    df_clean["_norm_text"] = df_clean["customer_text"].apply(normalize_text_for_dedup)
+    df_clean = df_clean.drop_duplicates(subset=["_norm_text"], keep="first")
+    df_clean = df_clean.drop(columns=["_norm_text"])
+
+    # 4. Validate intent
+    valid_intents = df_clean["intent"].isin(INTENTS)
+    if not valid_intents.all():
+        invalid = df_clean[~valid_intents]["intent"].tolist()
+        print(f"[FAIL] Found invalid intents: {invalid}")
+        return False
+
+    # 5. Reorder schema
+    df_clean = df_clean[SCHEMA_COLUMNS].copy()
+
+    # 6. Save back
+    df_clean.to_csv(filepath, index=False)
+    summary = update_summary(df_clean)
+    print(f"[PASS] Successfully exported clean golden set ({len(df_clean)} rows).")
+    print(f"Target count: {TARGET_COUNT} | Confirmed human labels: {summary['total_human_labelled']}")
+    return True
+
+
+def run_interactive_annotation(
+    target: int = TARGET_COUNT,
+    filepath: str = GOLDEN_SET_FILE,
+    reviewer_id: str = "human_reviewer"
+) -> None:
     """Run interactive CLI review loop."""
-    print("\n" + "=" * 75)
+    print("\n" + "=" * 78)
     print(f"STARTING GOLDEN SET HUMAN ANNOTATION WORKFLOW (Target: {target})")
-    print("=" * 75)
+    print(f"Active Reviewer ID: {reviewer_id}")
+    print("=" * 78)
 
     golden_df = load_or_init_golden_set(filepath)
     skipped_df, skipped_ids, skipped_texts = load_skipped_ids()
@@ -369,7 +494,7 @@ def run_interactive_annotation(target: int = TARGET_COUNT, filepath: str = GOLDE
     print(f"Available unreviewed candidates: {len(candidates)}")
 
     if not candidates:
-        print("[Notice] No more candidates available in golden_candidates.csv.")
+        print("[Notice] No more candidates available in provisional pool or golden_candidates.csv.")
         return
 
     # Sort candidates dynamically to balance classes
@@ -386,70 +511,109 @@ def run_interactive_annotation(target: int = TARGET_COUNT, filepath: str = GOLDE
             tid = candidate["tweet_id"]
             text = candidate["customer_text"]
             sugg = candidate["suggested_intent"]
+            src = candidate.get("source", "candidate_pool")
 
-            print("\n" + "-" * 75)
-            print(f"[{current_count}/{target}] Tweet ID: {tid}")
-            print("-" * 75)
+            print("\n" + "=" * 78)
+            print("  [SUGGESTED INTENT ONLY — NOT GROUND TRUTH — REQUIRES HUMAN AUDIT]")
+            print("=" * 78)
+            print(f"[{current_count}/{target}] Tweet ID: {tid} (Source: {src})")
+            print("-" * 78)
             print(f"CUSTOMER: \"{text}\"\n")
-            print(f"SUGGESTED INTENT: >>> {sugg} <<<")
-            print("\nOptions:")
-            print(f"  [A / Enter] ACCEPT suggested intent ({sugg})")
-            print("  Change intent:")
+            print(f"SUGGESTED INTENT: >>> {sugg} <<< (Candidate heuristic prediction)")
+            print("-" * 78)
+            print("FAST REVIEW COMMANDS:")
+            print(f"  [Enter / A]  : ACCEPT suggested intent ({sugg}) | Escalation: NO")
+            print("  [1 - 11]     : CHANGE intent to number below    | Escalation: NO")
+            print(f"  [E]          : ACCEPT suggested intent ({sugg}) | Escalation: YES (prompt reason)")
+            print("  [<num> E]    : CHANGE intent to <num>           | Escalation: YES (e.g. '8e')")
+            print("  [S]          : SKIP candidate (unclear / noisy / corrupt text)")
+            print("  [Q]          : SAVE progress & QUIT\n")
+            print("Taxonomy Classes:")
             for i, intent in enumerate(INTENTS, 1):
-                marker = "*" if intent == sugg else " "
-                print(f"    [{i:2d}]{marker} {intent}")
-            print("  [S] SKIP (unclear / ambiguous / bad text)")
-            print("  [Q] SAVE & QUIT\n")
+                marker = "  <-- SUGGESTED" if intent == sugg else ""
+                print(f"    [{i:2d}] {intent}{marker}")
+            print("-" * 78)
 
             chosen_intent = None
-            while True:
-                user_choice = input("Your choice [A/1-11/S/Q]: ").strip().lower()
+            is_escalated = "no"
+            esc_reason = ""
+            action = "accept"
 
+            while True:
+                user_choice = input(f"Reviewer [{reviewer_id}] choice [Enter/1-11/E/S/Q]: ").strip().lower()
+
+                # 1. Accept suggestion, no escalation
                 if user_choice in ["", "a", "accept", "y"]:
                     chosen_intent = sugg
+                    is_escalated = "no"
+                    action = "accepted_suggestion"
                     break
+
+                # 2. Skip candidate
                 elif user_choice in ["s", "skip"]:
                     skip_reason = input("Skip reason [default: unclear/ambiguous]: ").strip() or "unclear / ambiguous"
                     record_skipped_item(tid, text, skip_reason)
+                    record_audit_log(
+                        reviewer_id=reviewer_id,
+                        tweet_id=tid,
+                        customer_text=text,
+                        suggested_intent=sugg,
+                        final_intent="",
+                        action="skipped",
+                        escalation="no",
+                        escalation_reason=skip_reason,
+                        label_source="skipped"
+                    )
                     skipped_ids.add(str(tid).strip())
                     skipped_texts.add(normalize_text_for_dedup(text))
                     print(f"-> Skipped. ({len(skipped_ids)} total skipped)")
                     break
+
+                # 3. Quit
                 elif user_choice in ["q", "quit", "exit"]:
                     print("\nSaving progress and exiting...")
                     update_summary(golden_df)
                     print_status(filepath)
                     return
+
+                # 4. Accept suggestion with escalation
+                elif user_choice in ["e", "escalate"]:
+                    chosen_intent = sugg
+                    is_escalated = "yes"
+                    esc_reason = input("Escalation reason (e.g. PHYSICAL_SAFETY_HAZARD, ACCOUNT_SECURITY): ").strip() or "HUMAN_ESCALATION"
+                    action = "accepted_escalated"
+                    break
+
+                # 5. Change intent with escalation (e.g. '8e' or '8 e')
+                elif re.match(r"^(\d+)\s*e(scalate)?$", user_choice):
+                    m = re.match(r"^(\d+)\s*e(scalate)?$", user_choice)
+                    idx = int(m.group(1))
+                    if 1 <= idx <= len(INTENTS):
+                        chosen_intent = INTENTS[idx - 1]
+                        is_escalated = "yes"
+                        esc_reason = input("Escalation reason (e.g. PHYSICAL_SAFETY_HAZARD, ACCOUNT_SECURITY): ").strip() or "HUMAN_ESCALATION"
+                        action = "changed_escalated"
+                        print(f"-> Changed intent to {chosen_intent} with Escalation: YES")
+                        break
+                    else:
+                        print(f"Invalid intent number: {idx}. Must be between 1 and {len(INTENTS)}.")
+
+                # 6. Change intent without escalation (1-11)
                 elif user_choice.isdigit() and 1 <= int(user_choice) <= len(INTENTS):
                     chosen_intent = INTENTS[int(user_choice) - 1]
-                    print(f"-> Changed intent to: {chosen_intent}")
+                    is_escalated = "no"
+                    action = "changed_intent"
+                    print(f"-> Changed intent to: {chosen_intent} (Escalation: NO)")
                     break
+
                 else:
-                    print("Invalid option. Please enter 'A' to accept, '1-11' to change, 'S' to skip, or 'Q' to quit.")
+                    print("Invalid option. Press [Enter] to accept, [1-11] to change, [E] to escalate, [S] to skip, [Q] to quit.")
 
             if chosen_intent is None:
                 # Item was skipped
                 continue
 
-            # Escalation tagging
-            # Heuristic hint
-            hazard_hint = any(kw in text.lower() for kw in ["swell", "fire", "smoke", "burn", "shock", "explod", "hacked", "stolen", "lawyer", "attorney", "unauthorized"])
-            default_esc = "y" if hazard_hint else "n"
-
-            while True:
-                esc_input = input(f"Escalation required? (y/n) [default: {default_esc}]: ").strip().lower() or default_esc
-                if esc_input in ["y", "yes", "n", "no"]:
-                    is_escalated = "yes" if esc_input.startswith("y") else "no"
-                    break
-                print("Enter 'y' for yes or 'n' for no.")
-
-            esc_reason = ""
-            if is_escalated == "yes":
-                esc_reason = input("Escalation reason (e.g. PHYSICAL_SAFETY_HAZARD, ACCOUNT_SECURITY): ").strip()
-                if not esc_reason:
-                    esc_reason = "HUMAN_ESCALATION"
-
-            # Save immediately
+            # Save immediately to golden_set.csv
             reviewed_row = {
                 "tweet_id": tid,
                 "customer_text": text,
@@ -460,9 +624,20 @@ def run_interactive_annotation(target: int = TARGET_COUNT, filepath: str = GOLDE
             }
 
             golden_df = save_reviewed_item(reviewed_row, filepath)
+            record_audit_log(
+                reviewer_id=reviewer_id,
+                tweet_id=tid,
+                customer_text=text,
+                suggested_intent=sugg,
+                final_intent=chosen_intent,
+                action=action,
+                escalation=is_escalated,
+                escalation_reason=esc_reason,
+                label_source="human"
+            )
             reviewed_ids.add(str(tid).strip())
             reviewed_texts.add(normalize_text_for_dedup(text))
-            print(f"[OK] Saved! Current confirmed total: {len(golden_df)} / {target}")
+            print(f"[OK] Saved! Confirmed human total: {len(golden_df)} / {target}")
 
     except KeyboardInterrupt:
         print("\n\n[Interrupted] Saving progress...")
@@ -475,13 +650,14 @@ def run_interactive_annotation(target: int = TARGET_COUNT, filepath: str = GOLDE
 
 
 def run_unit_test() -> bool:
-    """Automated test to verify review, resume, skip, and schema logic without altering production data."""
+    """Automated test to verify review, resume, skip, audit, and schema logic without altering production data."""
     test_golden_file = os.path.join("data", "test_golden_set.csv")
     test_skipped_file = os.path.join("data", "test_golden_skipped.csv")
     test_summary_file = os.path.join("data", "test_golden_summary.json")
+    test_audit_file = os.path.join("data", "test_golden_audit.jsonl")
 
     # Clean up test files if exist
-    for f in [test_golden_file, test_skipped_file, test_summary_file]:
+    for f in [test_golden_file, test_skipped_file, test_summary_file, test_audit_file]:
         if os.path.exists(f):
             os.remove(f)
 
@@ -508,25 +684,51 @@ def run_unit_test() -> bool:
     assert df.iloc[0]["label_source"] == "human"
     print("[OK] Test 2 Passed: Immediate auto-save persists item with label_source='human'.")
 
-    # Test 3: Resume
+    # Test 3: Audit logging
+    record_audit_log(
+        reviewer_id="tester",
+        tweet_id="T1001",
+        customer_text="Battery draining quickly on iPhone 12",
+        suggested_intent="BATTERY_POWER",
+        final_intent="BATTERY_POWER",
+        action="accepted_suggestion",
+        escalation="no",
+        escalation_reason="",
+        label_source="human",
+        filepath=test_audit_file
+    )
+    assert os.path.exists(test_audit_file), "Audit log file should exist"
+    with open(test_audit_file, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+        assert len(lines) == 1
+        entry = json.loads(lines[0])
+        assert entry["reviewer_id"] == "tester"
+        assert entry["action"] == "accepted_suggestion"
+    print("[OK] Test 3 Passed: Audit trail correctly logged.")
+
+    # Test 4: Resume
     df_resumed = load_or_init_golden_set(test_golden_file)
     assert len(df_resumed) == 1
     assert df_resumed.iloc[0]["tweet_id"] == "T1001"
-    print("[OK] Test 3 Passed: Successfully resumed from saved file.")
+    print("[OK] Test 4 Passed: Successfully resumed from saved file.")
 
-    # Test 4: Record skip
+    # Test 5: Record skip
     record_skipped_item("T1002", "some vague text???", "vague question", test_skipped_file)
     sk_df, sk_ids, _ = load_skipped_ids(test_skipped_file)
     assert "T1002" in sk_ids
     assert len(sk_df) == 1
-    print("[OK] Test 4 Passed: Skipped candidate recorded and tracked separately.")
+    print("[OK] Test 5 Passed: Skipped candidate recorded and tracked separately.")
 
-    # Test 5: Verify Schema
+    # Test 6: Verify Schema
     assert verify_schema(test_golden_file) is True
-    print("[OK] Test 5 Passed: Schema verification passes.")
+    print("[OK] Test 6 Passed: Schema verification passes.")
+
+    # Test 7: Export Clean
+    assert export_clean_golden_set(test_golden_file) is True
+    print("[OK] Test 7 Passed: Export clean golden set passes.")
 
     # Clean up test artifacts
-    for f in [test_golden_file, test_skipped_file, test_summary_file]:
+    for f in [test_golden_file, test_skipped_file, test_summary_file, test_audit_file]:
         if os.path.exists(f):
             os.remove(f)
 
@@ -539,8 +741,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Hiver Golden Set Human Annotation Workflow")
     parser.add_argument("--status", action="store_true", help="Display current annotation progress and statistics")
     parser.add_argument("--verify-schema", action="store_true", help="Verify golden_set.csv schema integrity")
+    parser.add_argument("--export-clean", action="store_true", help="Export and validate clean golden_set.csv")
     parser.add_argument("--test", action="store_true", help="Run automated test suite of the annotation workflow")
     parser.add_argument("--target", type=int, default=TARGET_COUNT, help=f"Target number of reviewed examples (default: {TARGET_COUNT})")
+    parser.add_argument("--reviewer", type=str, default="human_reviewer", help="Reviewer ID for audit trail tracking")
     parser.add_argument("--file", type=str, default=GOLDEN_SET_FILE, help=f"Golden set output file (default: {GOLDEN_SET_FILE})")
 
     args = parser.parse_args()
@@ -549,7 +753,9 @@ if __name__ == "__main__":
         run_unit_test()
     elif args.verify_schema:
         verify_schema(args.file)
+    elif args.export_clean:
+        export_clean_golden_set(args.file)
     elif args.status:
         print_status(args.file)
     else:
-        run_interactive_annotation(target=args.target, filepath=args.file)
+        run_interactive_annotation(target=args.target, filepath=args.file, reviewer_id=args.reviewer)

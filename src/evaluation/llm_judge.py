@@ -265,6 +265,167 @@ def calculate_judge_human_agreement(
     }
 
 
+def compute_judge_human_agreement_from_files(
+    human_ratings_path: str = "data/human_response_quality_template.csv",
+    judge_ratings_path: Optional[str] = None
+) -> Dict[str, Any]:
+    """Read genuine human ratings and genuine judge ratings, match examples, and compute agreement metrics.
+
+    Requirements:
+    1. Reads genuine human ratings from human_ratings_path.
+    2. Reads genuine LLM judge ratings from judge_ratings_path (or evaluates via configured judge).
+    3. Matches the same examples by tweet_id or customer text.
+    4. Calculates quadratic weighted Cohen's kappa.
+    5. Calculates Spearman correlation.
+    6. Reports sample count.
+    7. Reports 'Not measured' when ratings are absent or blank.
+
+    DOES NOT create synthetic ratings.
+    """
+    import pandas as pd
+
+    print("=" * 80)
+    print("JUDGE-HUMAN AGREEMENT MEASUREMENT ENGINE")
+    print("=" * 80)
+
+    if not os.path.exists(human_ratings_path):
+        print(f"[Notice] Human ratings file '{human_ratings_path}' does not exist.")
+        return {
+            "status": "Not measured",
+            "reason": f"Human ratings file '{human_ratings_path}' not found.",
+            "sample_size": 0,
+            "cohen_kappa_weighted": None,
+            "spearman_rho": None
+        }
+
+    try:
+        df_human = pd.read_csv(human_ratings_path)
+    except Exception as e:
+        print(f"[Error] Could not read human ratings file: {e}")
+        return {
+            "status": "Not measured",
+            "reason": f"Could not read human ratings file: {e}",
+            "sample_size": 0,
+            "cohen_kappa_weighted": None,
+            "spearman_rho": None
+        }
+
+    # Identify rating column
+    overall_col = None
+    for col in ["human_overall", "overall", "rating", "human_rating"]:
+        if col in df_human.columns:
+            overall_col = col
+            break
+
+    if not overall_col:
+        print(f"[Notice] Rating column ('human_overall') not found in '{human_ratings_path}'.")
+        return {
+            "status": "Not measured",
+            "reason": "Human rating column ('human_overall') not found.",
+            "sample_size": 0,
+            "cohen_kappa_weighted": None,
+            "spearman_rho": None
+        }
+
+    # Extract valid human ratings (numeric 1-5 scale)
+    df_human["_rating_clean"] = pd.to_numeric(df_human[overall_col], errors="coerce")
+    rated_human = df_human[df_human["_rating_clean"].notna() & (df_human["_rating_clean"] >= 1) & (df_human["_rating_clean"] <= 5)]
+
+    print(f"Human ratings file: '{human_ratings_path}'")
+    print(f"Total template rows: {len(df_human)} | Rows with genuine human ratings: {len(rated_human)}")
+
+    if len(rated_human) == 0:
+        print("\n[RESULT: NOT MEASURED]")
+        print("All human rating columns in the template are currently blank.")
+        print("In accordance with scientific integrity guidelines, NO FAKE RATINGS ARE CREATED.")
+        print("Annotators must rate the examples in 'data/human_response_quality_template.csv' (1-5 scale) to measure agreement.")
+        print("=" * 80)
+        return {
+            "status": "Not measured",
+            "reason": "Human ratings columns are blank. Genuine human review has not yet occurred.",
+            "sample_size": 0,
+            "cohen_kappa_weighted": None,
+            "spearman_rho": None
+        }
+
+    # Load judge ratings
+    judge_scores_map: Dict[str, float] = {}
+    if judge_ratings_path and os.path.exists(judge_ratings_path):
+        try:
+            if judge_ratings_path.endswith(".json"):
+                with open(judge_ratings_path, "r", encoding="utf-8") as f:
+                    jdata = json.load(f)
+                for item in jdata:
+                    tid = str(item.get("tweet_id") or item.get("prompt") or "").strip()
+                    score = item.get("scores", {}).get("overall") or item.get("overall")
+                    if tid and score is not None:
+                        judge_scores_map[tid] = float(score)
+            else:
+                df_judge = pd.read_csv(judge_ratings_path)
+                for _, r in df_judge.iterrows():
+                    tid = str(r.get("tweet_id") or r.get("customer_text") or "").strip()
+                    s = r.get("judge_overall") or r.get("overall")
+                    if tid and pd.notna(s):
+                        judge_scores_map[tid] = float(s)
+        except Exception as e:
+            print(f"[Warning] Could not parse judge ratings file: {e}")
+    else:
+        # Check if judge is configured
+        judge = LLMJudge()
+        if not judge.is_configured:
+            print("\n[RESULT: NOT MEASURED]")
+            print("Human ratings are present, but LLM Judge is unconfigured (LLM_JUDGE_API_KEY not set).")
+            print("Cannot compute agreement without genuine judge outputs.")
+            print("=" * 80)
+            return {
+                "status": "Not measured",
+                "reason": "LLM Judge is unconfigured (no API key). Cannot compute agreement.",
+                "sample_size": len(rated_human),
+                "cohen_kappa_weighted": None,
+                "spearman_rho": None
+            }
+
+    # Match examples by tweet_id or text
+    pairs = []
+    for _, row in rated_human.iterrows():
+        tid = str(row.get("tweet_id", "")).strip()
+        ctext = str(row.get("customer_text", "")).strip()
+        h_score = float(row["_rating_clean"])
+
+        j_score = None
+        if tid and tid in judge_scores_map:
+            j_score = judge_scores_map[tid]
+        elif ctext and ctext in judge_scores_map:
+            j_score = judge_scores_map[ctext]
+
+        if j_score is not None:
+            pairs.append((j_score, h_score))
+
+    print(f"Matched rated pairs (Judge + Human): {len(pairs)}")
+    if len(pairs) < 5:
+        print("\n[RESULT: NOT MEASURED]")
+        print(f"Insufficient matched rated pairs ({len(pairs)}). Minimum 5 required for agreement metrics.")
+        print("=" * 80)
+        return {
+            "status": "Not measured",
+            "reason": f"Insufficient matched rated pairs ({len(pairs)}). Minimum 5 required.",
+            "sample_size": len(pairs),
+            "cohen_kappa_weighted": None,
+            "spearman_rho": None
+        }
+
+    j_vals = [p[0] for p in pairs]
+    h_vals = [p[1] for p in pairs]
+    agreement = calculate_judge_human_agreement(j_vals, h_vals)
+    print("\nAGREEMENT METRICS:")
+    print(f"  Sample Size               : {agreement['sample_size']}")
+    print(f"  Quadratic Weighted Kappa  : {agreement['cohen_kappa_weighted']}")
+    print(f"  Spearman Correlation (rho): {agreement['spearman_rho']}")
+    print("=" * 80)
+    return agreement
+
+
+
 def generate_human_quality_rating_template(
     pipeline: Optional[SupportAgentPipeline] = None,
     output_path: str = "data/human_response_quality_template.csv"
@@ -272,6 +433,7 @@ def generate_human_quality_rating_template(
     """Generate a clean annotation template containing pipeline outputs for the 11 verified human golden queries.
 
     The template leaves human score columns blank so human raters can independently annotate.
+    Includes reviewer_id and timestamp metadata columns.
     """
     import pandas as pd
 
@@ -303,7 +465,10 @@ def generate_human_quality_rating_template(
             "is_escalated": res.get("is_escalated", False),
             "generated_response": gen_text,
             "retrieved_evidence": retrieved[:200],
-            # Human rating columns left blank for genuine human evaluation
+            # Reviewer audit metadata
+            "reviewer_id": "",
+            "timestamp": "",
+            # Human rating columns (1-5 Likert scale) left blank for genuine human evaluation
             "human_groundedness": "",
             "human_relevance": "",
             "human_actionability": "",
@@ -316,6 +481,7 @@ def generate_human_quality_rating_template(
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     pd.DataFrame(records).to_csv(output_path, index=False, encoding="utf-8-sig")
     return output_path
+
 
 
 def run_llm_judge_evaluation(
@@ -427,4 +593,24 @@ def run_llm_judge_evaluation(
 
 
 if __name__ == "__main__":
-    run_llm_judge_evaluation()
+    import argparse
+    parser = argparse.ArgumentParser(description="LLM-as-a-Judge Response Quality & Human Agreement Harness")
+    parser.add_argument("--calculate-agreement", action="store_true", help="Calculate quadratic weighted Kappa and Spearman correlation between human and judge ratings")
+    parser.add_argument("--human-file", type=str, default="data/human_response_quality_template.csv", help="Path to human ratings CSV file")
+    parser.add_argument("--judge-file", type=str, default=None, help="Path to LLM judge ratings JSON or CSV file (optional)")
+    parser.add_argument("--generate-template", action="store_true", help="Generate fresh human quality rating template CSV")
+    parser.add_argument("--model", type=str, default="gpt-4o-mini", help="LLM judge model name (default: gpt-4o-mini)")
+
+    args = parser.parse_args()
+
+    if args.calculate_agreement:
+        compute_judge_human_agreement_from_files(
+            human_ratings_path=args.human_file,
+            judge_ratings_path=args.judge_file
+        )
+    elif args.generate_template:
+        tpath = generate_human_quality_rating_template()
+        print(f"Generated human response quality template at: {tpath}")
+    else:
+        run_llm_judge_evaluation(model=args.model)
+
