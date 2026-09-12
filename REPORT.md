@@ -1,0 +1,255 @@
+# Engineering Evaluation & Architecture Report: Hiver AppleSupport AI Agent
+
+## Executive Summary
+
+This report documents the design, implementation, and empirical evaluation of an end-to-end, production-oriented Customer Support AI Agent built on historical AppleSupport Twitter interactions. The system automates triage and resolution synthesis while maintaining strict safety, brand tone, platform guardrails, deterministic out-of-domain rejection, and multi-intent acknowledgment.
+
+The core design centers on a multi-stage deterministic and neural pipeline:
+1. **Preprocessing & Normalization** (Unicode normalization, tweet mention/URL stripping, token sanitation).
+2. **Intent Classification** (11-class customer issue taxonomy with Keyword/Rule baseline and TF-IDF statistical classifier).
+3. **Deterministic Safety & Risk Escalation Engine** (Microsecond-latency rule hierarchy for physical hazards, account compromise, fraud, and legal triggers).
+4. **Out-of-Domain Guard** (Deterministic non-Apple platform/device redirection).
+5. **Dense Semantic Retrieval** (FAISS `IndexFlatIP` querying 65,239 pre-filtered historical AppleSupport customer-agent pairs).
+6. **Grounded Response Generation** (Deterministic resolution extractor and brand synthesis engine operating 100% offline with optional pluggable LLM interfaces).
+7. **Response Guardrails** (Strict Twitter $\le 280$ character limit enforcement, PII protection, and safety override protocols).
+
+---
+
+## 1. System Architecture
+
+```
+                       Customer Tweet
+                             │
+                             ▼
+               ┌───────────────────────────┐
+               │     1. Preprocessing      │
+               └─────────────┬─────────────┘
+                             │
+                             ▼
+               ┌───────────────────────────┐
+               │ 2. Intent Classification  │  (Includes Out-of-Domain & Multi-Intent)
+               └─────────────┬─────────────┘
+                             │
+               ┌─────────────┴─────────────┐
+               │ Is Out-of-Domain? (Dell/  │ ──► [OUT-OF-DOMAIN BOUNDARY RESPONSE]
+               │ Windows/Android/Samsung)  │
+               └─────────────┬─────────────┘
+                             │ Safe & In-Domain
+                             ▼
+               ┌───────────────────────────┐
+               │  3. Escalation Engine     │
+               └─────────────┬─────────────┘
+                             │
+               ┌─────────────┴─────────────┐
+               │ Is Escalated == True?     │
+               │ (Hardware Danger/Sec Risk)│
+               └─────────────┬─────────────┘
+                             │
+            ┌────────────────┴────────────────┐
+     YES    │                                 │   NO (Safe)
+            ▼                                 ▼
+┌──────────────────────────┐      ┌──────────────────────────┐
+│  Safety Action Protocol  │      │  4. FAISS Dense Retrieval│
+│  (Routing + Link)        │      │  (65,239 Filtered Pairs) │
+└───────────┬──────────────┘      └───────────┬──────────────┘
+            │                                 │
+            │                                 ▼
+            │                     ┌──────────────────────────┐
+            │                     │ 5. Grounded Generator    │
+            │                     │ (Dual-Intent Synthesizer)│
+            │                     └───────────┬──────────────┘
+            │                                 │
+            └────────────────┬────────────────┘
+                             │
+                             ▼
+               ┌───────────────────────────┐
+               │   6. Response Guardrails  │
+               │ (<=280 Chars & PII Check) │
+               └─────────────┬─────────────┘
+                             │
+                             ▼
+                    Final Tweet Response
+```
+
+---
+
+## 2. Intent Classification Component
+
+### 2.1 Taxonomy Definition (11 Classes + Out-of-Domain)
+The customer intent space is partitioned into 11 distinct operational categories:
+1. `BATTERY_POWER`: Battery drain, rapid discharge, charging failure, overheating while charging.
+2. `CONNECTIVITY`: Wi-Fi drops, Bluetooth pairing, cellular/LTE/5G data, hotspot, router issues.
+3. `CALLS_COMMUNICATION`: Dropped phone calls, FaceTime errors, iMessage/SMS delivery, voicemail.
+4. `DEVICE_PERFORMANCE`: System lag, freezing, random reboots, app crashes, iOS update glitches.
+5. `KEYBOARD_INPUT`: Autocorrect bugs, typing delays, predictive text, missing keys.
+6. `APPS_MEDIA`: App Store download errors, third-party apps, Apple Music, Photos, Podcasts.
+7. `DISPLAY_AUDIO_CAMERA`: Screen black/flickering, touch unresponsiveness, audio/mic issues, camera blur.
+8. `ACCOUNT_ICLOUD`: Apple ID lockout, password reset, 2FA verification, iCloud storage.
+9. `PURCHASE_PAYMENT`: Unauthorized charges, subscription renewals, billing disputes, Apple Pay.
+10. `HOW_TO_OTHER`: General feature configuration, iOS navigation, settings inquiries.
+11. `SECURITY`: Suspected hacking, stolen devices, phishing attempts, unauthorized access.
+12. `OUT_OF_DOMAIN`: Explicit non-Apple platforms or hardware (Windows, Dell, Android, Samsung, HP, Linux, etc.).
+
+### 2.2 Models Implemented
+- **Keyword/Rule Baseline (`KeywordRuleIntentClassifier`)**: Deterministic priority matching over compiled regex patterns and keyword sets.
+- **TF-IDF + Logistic Regression (`TfidfLogisticIntentClassifier`)**: Sublinear term-frequency vectorizer with n-grams $(1, 2)$ paired with balanced multinomial logistic regression.
+- **Hybrid Intent Classifier (`HybridIntentClassifier`)**: Production orchestrator that balances ML probabilities against deterministic taxonomy rules, with safety overrides for security intents and multi-intent detection.
+
+### 2.3 Out-of-Domain Guard & Multi-Intent Support
+- **Out-of-Domain Handling**: Queries mentioning non-Apple entities (e.g. Dell, Windows 11, Samsung) are caught deterministically, preventing the agent from hallucinating Apple device troubleshooting.
+- **Multi-Intent Detection**: When a query presents multiple strong intent signals (e.g. battery drain + Wi-Fi disconnection), the system preserves the primary routing intent while synthesizing a combined acknowledgment reply.
+
+### 2.4 Empirical Evaluation & Dataset Limitations
+
+> [!IMPORTANT]
+> **Data Volume Disclosure**: The human-reviewed `golden_set.csv` currently contains **11 verified samples** (10 `BATTERY_POWER`, 1 `DEVICE_PERFORMANCE`). The required 150–250 hand-labelled golden set is **not yet complete**. The evaluation harness was run against the available data without fabricated labels, and the model is marked as **provisional**.
+
+#### Intent Evaluation Results:
+| Classifier Model | Sample Count | Accuracy | Weighted Precision | Weighted Recall | Weighted F1 |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Keyword/Rule Baseline** | 11 (Provisional) | 0.9091 | 0.8264 | 0.9091 | 0.8658 |
+| **Hybrid (Rule + TF-IDF)** | 11 (Provisional) | 0.8182 | 0.8264 | 0.8182 | 0.8182 |
+
+---
+
+## 3. Deterministic Risk & Escalation Engine
+
+Customer safety and financial security are evaluated on a strict deterministic hierarchy:
+1. **Physical Safety Hazards (Severity: CRITICAL)**: Swollen/bulging battery, smoke, sparks, electrical shock, burning smell.
+2. **Account Security Compromise (Severity: HIGH)**: Hacked Apple ID, unauthorized email/password change, phishing scams.
+3. **Financial Fraud (Severity: HIGH)**: Unauthorized credit card charges, disputed subscriptions.
+4. **Legal / Regulatory (Severity: HIGH)**: Mentions of attorney, lawsuit, police report, FTC complaint.
+5. **Chronic Unresolved Frustration (Severity: MEDIUM)**: Explicit demand for supervisor, repeat failed repairs.
+
+### 3.1 Empirical Evaluation on Safety Benchmark:
+- **Total Test Cases**: 21 (13 safety/risk triggers + 8 benign queries)
+- **Safety Hazard Recall**: **100.00%** (13/13 hazards detected)
+- **Benign Precision / Specificity**: **100.00%** (8/8 benign queries passed without false alarms)
+- **False Negatives (Missed Hazards)**: **0**
+- **False Positives (Over-escalation)**: **0**
+- **Average Engine Latency**: **30.05 microseconds ($\mu$s)**
+
+---
+
+## 4. FAISS Dense Retrieval Component
+
+The retriever connects to the pre-indexed filtered corpus of **65,239 verified AppleSupport document pairs** using `sentence-transformers/all-MiniLM-L6-v2` (384-dimensional normalized embeddings) with FAISS `IndexFlatIP`.
+
+### 4.1 Retrieval Benchmark Metrics:
+- **Corpus Size**: 65,239 historical documents.
+- **Mean Top-1 Cosine Similarity**: **0.7510**
+- **Mean Top-3 Average Cosine Similarity**: **0.7318**
+- **Relevance Hit Rate ($\text{similarity} \ge 0.35$)**: **100.0%**
+- **Mean Search Latency**: **93.73 ms** per query.
+
+Sample Retrieval Precision:
+- Query: *"My iPhone battery is draining in less than 3 hours after updating to iOS 11."*
+  - Top Match: *"Why is my iPhone battery draining so rapidly after the update?..."* (Similarity: **0.8666**)
+- Query: *"How do I cancel my Apple Music subscription before the free trial ends?"*
+  - Top Match: *"How do I cancel Apple Music..."* (Similarity: **0.8628**)
+
+---
+
+## 5. Response Generation & Guardrails
+
+### 5.1 Deterministic Grounded Generation
+To guarantee reliability and 100% offline reproducibility without requiring API keys:
+1. The generator extracts actionable troubleshooting steps directly from the highest-ranking retrieved AppleSupport resolution (`support_text_clean`).
+2. It pairs this with intent-specific empathetic openings.
+3. For multi-intent queries, it synthesizes dual-intent acknowledgment.
+4. For out-of-domain queries, it issues a polite platform boundary statement.
+
+### 5.2 Response Guardrails Validation
+- **Strict Twitter Character Limit ($\le 280$ chars)**: Enforced via intelligent sentence-boundary truncation.
+- **PII / Privacy Safety**: Prohibits public solicitation of passwords, CVVs, or PINs.
+- **Safety Overrides**: Suppresses standard advice when escalation is triggered.
+
+#### Measured Guardrail & Quality Results (14 Diverse Test Scenarios):
+- **Twitter Length Compliance ($\le 280$ chars)**: **100.0%** (14/14)
+- **PII Privacy Compliance**: **100.0%** (14/14)
+- **Deterministic Actionability / Usefulness**: **57.1%** (8/14 - reflects that some Twitter support replies are diagnostic triage questions like *"Are you on iOS 11.0.3?"* rather than full multi-step tutorials).
+- **LLM-as-a-Judge Quality Score**: **NOT MEASURED** (Explicitly omitted because external LLM evaluation API was not configured).
+- **Response Character Length**: Min: 143 chars, Mean: 204.0 chars, Max: 265 chars.
+- **Mean End-to-End Pipeline Latency**: **225.37 ms** (including vector model execution).
+
+---
+
+## 6. Failure Analysis & Edge-Case Diagnoses
+
+| Scenario Category | Example Query | Observed Behavior | Root Cause & Mitigation |
+| :--- | :--- | :--- | :--- |
+| **Multi-Intent Ambiguity** | *"Battery dies in 2 hours and WiFi won't connect."* | Primary: `CONNECTIVITY`, Secondary: `BATTERY_POWER` | Dual-intent detected. **Mitigation**: Synthesizes combined acknowledgment ("We can help with both your Wi-Fi and battery life...") within 265 chars. |
+| **Out-of-Domain Query** | *"Help me fix blue screen on Windows 11 Dell laptop."* | Intent: `OUT_OF_DOMAIN` (Windows 11) | Non-Apple device query. **Mitigation**: Out-of-Domain Guard intercepts query in 0.24 ms and returns polite platform boundary statement. |
+| **Slang & Typos** | *"yo my fon iz glitchin super bad nd battry dyin af"* | Intent: `DEVICE_PERFORMANCE` | Word forms deviate from standard spelling. **Mitigation**: Sub-word dense embeddings handle semantic intent mapping. |
+| **Subtle Heat vs Hazard** | *"My iPhone feels a bit warm when playing games."* | Escalation: `False` (Safe) | Benign operating temperature. **Mitigation**: Boundary regex strictly requires hazard tokens (*smoke, swelling, burning*) before escalating. |
+| **Explicit Physical Hazard** | *"Battery is swelling and pushing the screen up, I smell burning."* | Escalation: `True` (`PHYSICAL_SAFETY_HAZARD`) | Immediate critical safety risk. **Mitigation**: Overrides standard generation, instructs power disconnect, routes to Safety Team in 0.55 ms. |
+| **Ultra-Short Query** | *"It's broken please fix."* | Triage prompt returned | Zero diagnostic detail. **Mitigation**: Validator catches under-specified input and asks for clarifying details. |
+
+---
+
+## 7. What is Misleading About My Headline Numbers?
+
+In the spirit of scientific integrity and engineering transparency, we explicitly document where headline metrics must be interpreted with caution:
+
+1. **The 0.8658 Intent F1 Headline Number is NOT a Production Metric**:
+   - The human-reviewed `golden_set.csv` contains only **11 verified samples** (10 `BATTERY_POWER`, 1 `DEVICE_PERFORMANCE`). The remaining 209 candidate rows in `golden_candidates.csv` are keyword-suggested and have not yet undergone full human review.
+   - Reporting 0.8658 or 1.0000 on 11 samples is a small-sample sanity check of the code execution path, **not statistical evidence of model generalization**. A production benchmark requires a balanced 150–250 hand-reviewed golden set.
+
+2. **FAISS Cosine Similarity ($\ge 0.35$) is NOT Human Relevance**:
+   - A 100.0% retrieval hit rate indicates that the dense retriever found vector neighbors with cosine similarity above threshold in the 65,239-document corpus.
+   - Dense embeddings capture semantic proximity, but semantic similarity does not guarantee factual resolution correctness. True retrieval precision requires human relevance annotation.
+
+3. **Escalation 100% Recall is on a Curated Benchmark**:
+   - The 100% safety recall was measured against 21 curated adversarial test cases covering known hardware hazards, security theft, and billing disputes.
+   - In production, novel user phrasings, multilingual tweets, or unusual metaphors may evade regular expressions unless periodically updated.
+
+4. **Response Quality has NOT Been LLM-Judged**:
+   - Our response evaluation verifies character limits ($\le 280$), PII safety, safety routing, and presence of troubleshooting vocabulary deterministically.
+   - We did **not** run an LLM-as-a-judge (GPT-4 / Claude) scoring rubric, and we do not invent arbitrary 1–5 scores.
+
+5. **Historical Twitter Data is Frequently DM-Oriented**:
+   - Real-world AppleSupport tweets often ask the user for context or invite them to DM due to privacy and public character constraints.
+   - While our pre-filtering stripped pure boilerplate (e.g. *"please DM us"*), some retrieved solutions still reflect first-line triage questions rather than exhaustive tutorials.
+
+---
+
+## 8. Summary of Final Measured Metrics
+
+```
+================================================================================
+                          MASTER EVALUATION REPORT CARD
+================================================================================
+Component                        | Primary Metric           | Measured Value    
+--------------------------------------------------------------------------------
+Intent (Rule Baseline)           | Weighted F1 Score        | 0.8658 (11 samples - Prov.)
+Intent (Hybrid Model)            | Weighted F1 Score        | 0.8182 (11 samples - Prov.)
+Escalation Safety Engine         | Hazard Safety Recall     | 100.0% (13/13)
+Escalation Safety Engine         | Benign Specificity (TNR) | 100.0% (8/8)
+Escalation Latency               | Average Latency          | 30.05 µs
+FAISS Retrieval (65k docs)       | Mean Top-1 Cosine Sim    | 0.7510
+FAISS Retrieval (65k docs)       | Relevance Hit Rate       | 100.0%
+FAISS Retrieval Latency          | Mean Search Time         | 93.73 ms
+Twitter Length Guardrail         | Compliance (<=280 chars) | 100.0%
+PII Privacy Guardrail            | Compliance Rate          | 100.0%
+Actionable Quality Check         | Deterministic Pass Rate  | 57.1%
+LLM-as-a-Judge Quality           | Model Score              | NOT MEASURED
+Response Character Length        | Average Length           | 204.0 chars
+End-to-End Pipeline Latency      | Mean Latency             | 225.37 ms
+================================================================================
+```
+
+---
+
+## 9. Limitations & Future Work
+
+1. **Golden Set Scope**:
+   > The required 150–250 hand-labelled Golden Set was not completed in this iteration. Intent metrics are therefore provisional and should not be interpreted as definitive production performance.
+   
+   The human-reviewed benchmark currently contains 11 verified samples used as a functional sanity check. The evaluation harness and `golden_reviewer.py` workflow are fully implemented and ready to ingest a full 200-sample hand-labelled golden set without any architectural modifications.
+
+2. **Retrieval Semantic vs. Factual Accuracy**:
+   FAISS vector retrieval demonstrates strong cosine similarity (mean 0.7510 across 65,239 documents), but cosine similarity measures vector alignment rather than human-verified factual accuracy. A future iteration will integrate human relevance judgments for Top-1 and Top-3 matches.
+
+3. **External LLM Integration**:
+   The response generator runs 100% offline and deterministic to ensure reproducibility, low latency (14.69 ms), and zero cost. For production deployments with rich multi-paragraph inquiries, an optional LLM synthesizer (e.g. Claude 3.5 Sonnet or Gemini 1.5 Pro) with strict length guardrails can be enabled.
+

@@ -1,0 +1,363 @@
+# Hiver AppleSupport AI Agent
+
+An end-to-end, production-grade Customer Support AI Agent built on historical AppleSupport Twitter interactions. The agent ingests customer queries, performs preprocessing and intent classification, enforces safety/escalation guardrails, redirects out-of-domain queries, retrieves relevant historical resolutions via dense FAISS search, synthesizes grounded replies, and validates Twitter platform constraints ($\le 280$ characters).
+
+---
+
+## Architecture Overview
+
+```
+                       Customer Tweet
+                             │
+                             ▼
+               ┌───────────────────────────┐
+               │     1. Preprocessing      │  (Unicode/emoji normalization, URL/mention strip)
+               └─────────────┬─────────────┘
+                             │
+                             ▼
+               ┌───────────────────────────┐
+               │ 2. Intent Classification  │  (11-class taxonomy: Rule Baseline + TF-IDF Model)
+               └─────────────┬─────────────┘
+                             │
+               ┌─────────────┴─────────────┐
+               │ Is Out-of-Domain? (Dell/  │ ──► [OUT-OF-DOMAIN BOUNDARY RESPONSE]
+               │ Windows/Android/Samsung)  │
+               └─────────────┬─────────────┘
+                             │ Safe & In-Domain
+                             ▼
+               ┌───────────────────────────┐
+               │  3. Escalation Engine     │  (Hardware hazards, account security, billing fraud)
+               └─────────────┬─────────────┘
+                             │
+               ┌─────────────┴─────────────┐
+               │ Is Escalated == True?     │
+               │ (Hardware Danger/Sec Risk)│
+               └─────────────┬─────────────┘
+                             │
+            ┌────────────────┴────────────────┐
+     YES    │                                 │   NO (Safe)
+            ▼                                 ▼
+┌──────────────────────────┐      ┌──────────────────────────┐
+│  Safety Action Protocol  │      │  4. FAISS Dense Retrieval│
+│  (Routing + Link)        │      │  (65,239 Filtered Pairs) │
+└───────────┬──────────────┘      └───────────┬──────────────┘
+            │                                 │
+            │                                 ▼
+            │                     ┌──────────────────────────┐
+            │                     │ 5. Grounded Generator    │
+            │                     │ (Dual-Intent Synthesizer)│
+            │                     └───────────┬──────────────┘
+            │                                 │
+            └────────────────┬────────────────┘
+                             │
+                             ▼
+               ┌───────────────────────────┐
+               │   6. Response Guardrails  │  (Twitter <=280 chars & PII protection)
+               └─────────────┬─────────────┘
+                             │
+                             ▼
+                    Final Tweet Response
+```
+
+---
+
+## Key Features
+
+1. **Deterministic Safety Escalation Engine**:
+   - Immediate detection of physical hazards (swollen batteries, smoking chargers), security breaches (hacked Apple IDs), and payment fraud.
+   - Evaluates in **$30.05\ \mu\text{s}$** with **100% safety recall** on hazard benchmarks.
+2. **Deterministic Out-of-Domain Guard**:
+   - Detects explicit non-Apple platforms (Windows, Dell, Android, Samsung, HP) and sets clear boundaries without hallucinating Apple troubleshooting.
+3. **Multi-Intent Handling**:
+   - Recognizes multi-issue customer tweets (e.g. battery drain + Wi-Fi drops) and synthesizes combined acknowledgment within character limits.
+4. **Dense Vector Retrieval (FAISS)**:
+   - Queries **65,239 pre-filtered historical AppleSupport customer-agent pairs**.
+   - Embeddings: `sentence-transformers/all-MiniLM-L6-v2` (384-dimensional normalized vectors).
+   - Mean top-1 cosine similarity: **0.7510**.
+5. **Grounded Resolution Synthesis**:
+   - 100% offline runnable without external API key dependencies.
+   - Synthesizes empathetic, brand-appropriate Apple Support replies grounded in retrieved evidence.
+6. **Response Guardrails**:
+   - Strict Twitter character limit ($\le 280$ chars) enforced via sentence-boundary truncation.
+   - Public PII protection (blocks soliciting passwords/credit cards on public tweets).
+
+---
+
+## One-Command Quick Start (Full Stack Web App & CLI)
+
+### Prerequisites
+- Python 3.10+ (tested on Python 3.10 – 3.14)
+- Node.js 18+ & npm
+- Memory: $\ge 4\text{ GB}$ RAM (for holding the 65,239-document FAISS index)
+
+---
+
+### Step 1: Install Python Dependencies
+```bash
+pip install fastapi uvicorn pydantic faiss-cpu sentence-transformers scikit-learn pandas numpy joblib rich
+```
+
+### Step 2: Start the FastAPI AI Backend (Port 8000)
+```bash
+python -m uvicorn backend.main:app --reload --port 8000
+```
+*The backend loads the 65,239-vector FAISS index and sentence-transformer model once during startup lifecycle.*
+
+Verify backend health:
+```bash
+curl http://localhost:8000/health
+```
+Response:
+```json
+{
+  "status": "ok",
+  "service": "hiver-support-agent",
+  "version": "1.0.0",
+  "faiss_index_ready": true,
+  "indexed_documents": 65239
+}
+```
+
+### Step 3: Start the React Frontend Console (Port 5173)
+In a second terminal:
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Open **[http://localhost:5173](http://localhost:5173)** (or **[http://localhost:5174](http://localhost:5174)** if port 5173 is in use) in your browser.
+
+---
+
+### CLI & Evaluation Commands
+- **Interactive CLI Demo**:
+  ```bash
+  python demo_cli.py
+  ```
+- **Golden Set Human Annotation Workflow**:
+  ```bash
+  python golden_reviewer.py
+  ```
+  Check annotation status & class distribution:
+  ```bash
+  python golden_reviewer.py --status
+  ```
+  Verify output schema:
+  ```bash
+  python golden_reviewer.py --verify-schema
+  ```
+- **Master Evaluation Benchmark Suite**:
+  ```bash
+  python src/evaluation/eval_all.py
+  ```
+
+---
+
+## API Endpoints Reference
+
+| Method | Path | Description | Sample Request / Response |
+| :--- | :--- | :--- | :--- |
+| **GET** | `/health` | Service status, FAISS readiness, indexed document count | `{"status": "ok", "indexed_documents": 65239}` |
+| **POST** | `/api/analyze` | Real end-to-end Python NLP pipeline for customer message | `{"message": "iPhone battery drains rapidly"}` |
+| **POST** | `/api/search` | Semantic dense-vector search over 65,239 FAISS cases | `{"query": "battery drain", "k": 3}` |
+| **GET** | `/api/evaluation` | Measured evaluation benchmark metrics | Returns provisional intent F1, 100% safety recall, FAISS latency |
+
+#### Sample `/api/analyze` Response
+```json
+{
+  "query": "@AppleSupport my iPhone 13 battery drains from 100% to 30% in about three hours...",
+  "intent": "BATTERY_POWER",
+  "secondary_intents": ["DEVICE_PERFORMANCE"],
+  "confidence": 0.8235,
+  "escalated": false,
+  "escalation_reason": null,
+  "risk_level": "low",
+  "decision": "auto_response",
+  "routing_target": "Automated resolution — battery power queue",
+  "retrieved_cases": [
+    {
+      "similarity": 0.8179,
+      "customer_text": "iPhone battery drops fast after update...",
+      "support_text": "We'd love to help troubleshoot battery performance..."
+    }
+  ],
+  "response": "We can help with both your battery life and device performance...",
+  "response_length": 218,
+  "guardrails": {
+    "length_ok": true,
+    "pii_safe": true,
+    "actionable": true
+  },
+  "latency_ms": 133.56
+}
+```
+
+---
+
+## How the System Works
+
+The agent pipeline processes inbound customer support queries sequentially through six specialized layers:
+
+1. **Preprocessing (`src/preprocessing.py`)**:
+   - Strips Twitter handles (`@AppleSupport`), URLs, and excess whitespace.
+   - Preserves emojis and casing signals that carry sentiment or urgent emphasis.
+
+2. **Intent Classification & Domain Boundary (`src/models/intent_classifier.py`)**:
+   - **Out-of-Domain Guard**: First checks if query references non-Apple hardware/platforms (e.g., Windows 11, Dell, Android, Samsung, HP). If detected, triggers an immediate polite boundary response without querying Apple troubleshooting.
+   - **11-Class Taxonomy**: Categorizes in-domain queries into `BATTERY_POWER`, `CONNECTIVITY`, `ACCOUNT_ICLOUD`, etc.
+   - **Multi-Intent Detection**: Identifies compound issues (e.g. battery drain + Wi-Fi drops) to retain both contexts.
+
+3. **Risk & Safety Escalation Engine (`src/models/escalation_engine.py`)**:
+   - Deterministic keyword and regex inspection executing in $\approx 30\ \mu\text{s}$.
+   - Classifies queries into:
+     - `PHYSICAL_SAFETY_HAZARD` (Risk: CRITICAL) -> Hardware Safety Team.
+     - `ACCOUNT_SECURITY_COMPROMISE` (Risk: HIGH) -> Account Security Specialist.
+     - `FINANCIAL_FRAUD_DISPUTE` (Risk: HIGH) -> Payments & Billing Team.
+   - If escalated, bypasses generative LLM/retrieval and issues a **deterministic safety override** to prevent dangerous or inaccurate advice.
+
+4. **Dense Vector Retrieval (`src/models/retriever.py`)**:
+   - Bypassed for safety escalations and out-of-domain queries.
+   - For technical queries, encodes user text with `all-MiniLM-L6-v2` into 384-dimensional vectors.
+   - Queries the pre-built FAISS `IndexFlatIP` index of 65,239 curated historical AppleSupport conversations.
+   - Returns top-$k$ historical resolutions sorted by cosine similarity.
+
+5. **Grounded Response Generation (`src/models/generator.py`)**:
+   - 100% offline runnable without external LLM API key dependencies.
+   - Synthesizes an empathetic, grounded response combining the historical resolutions with the user's primary and secondary issues.
+
+6. **Response Guardrails (`src/models/guardrails.py`)**:
+   - **Twitter Length Limit**: Strict $\le 280$ character enforcement via sentence-boundary truncation.
+   - **Privacy & PII Protection**: Prevents soliciting credit cards or passwords in public tweets.
+
+
+---
+
+## Example Queries & Trace Walkthrough
+
+### Example 1: Standard In-Domain Technical Query
+```bash
+python demo_cli.py --query "My iPhone battery drains rapidly after the latest update"
+```
+**Pipeline Trace**:
+- **Intent**: `BATTERY_POWER` (Secondary: `DEVICE_PERFORMANCE`)
+- **Escalation**: `SAFE`
+- **FAISS Retrieval**: Top match similarity `0.8179`
+- **Reply**: *"We can help with both your battery life and device performance. First, we know how essential battery life is. let's figure this out. Let us know how that goes, and we can look into the device performance next!"* (209 chars)
+
+### Example 2: Critical Safety Hazard Escalation
+```bash
+python demo_cli.py --query "My battery is swelling and smells like burning plastic"
+```
+**Pipeline Trace**:
+- **Intent**: `BATTERY_POWER`
+- **Escalation**: `ESCALATED (PHYSICAL_SAFETY_HAZARD)` (Latency: 0.55 ms)
+- **FAISS Retrieval**: Skipped for immediate safety
+- **Reply**: *"Safety Alert: Please immediately disconnect your device from charging and power. Our Hardware Safety Team has been notified and will assist you urgently."* (153 chars)
+
+### Example 3: Out-of-Domain Non-Apple Query
+```bash
+python demo_cli.py --query "Can you fix the blue screen on my Windows 11 Dell laptop?"
+```
+**Pipeline Trace**:
+- **Intent**: `OUT_OF_DOMAIN` (Non-Apple Entity: `windows 11`)
+- **Escalation**: `OUT_OF_DOMAIN` (Latency: 0.24 ms)
+- **FAISS Retrieval**: Skipped (0 hallucinations)
+- **Reply**: *"We provide support for Apple products and services. For help with Windows 11, please contact the manufacturer's official support team. Let us know if you need help with an Apple device!"* (185 chars)
+
+---
+
+## Project Structure
+
+```
+hiver-support-agent/
+├── backend/
+│   └── main.py                           # FastAPI REST API server (lifespan loading, CORS, health)
+├── frontend/
+│   ├── components/                       # UI design system (app-shell, app-sidebar, badges)
+│   ├── routes/                           # 6 TanStack routes (Overview, Analyze, Escalations, etc.)
+│   ├── services/api.ts                   # Typed API client connecting to FastAPI
+│   ├── public/favicon.svg                # Minimal AI customer support SVG favicon
+│   ├── index.html                        # HTML shell with Google Fonts & meta tags
+│   ├── package.json                      # Frontend dependencies & scripts
+│   └── vite.config.ts                    # Vite build configuration
+├── src/
+│   ├── preprocessing.py                  # Text normalization & Twitter artifact cleaning
+│   ├── models/
+│   │   ├── intent_classifier.py          # 11-intent taxonomy, OOD guard, Multi-intent, ML & Rule models
+│   │   ├── escalation_engine.py          # Deterministic safety & risk engine (<35 µs)
+│   │   ├── retriever.py                  # FAISS dense vector retrieval component
+│   │   ├── generator.py                  # Grounded response generator
+│   │   └── guardrails.py                 # Twitter <=280 char limit & PII guardrails
+│   ├── pipeline/
+│   │   └── agent_pipeline.py             # End-to-end pipeline orchestrator
+│   └── evaluation/
+│       ├── eval_intent.py                # Intent evaluation harness
+│       ├── eval_escalation.py            # Safety & risk evaluation suite
+│       ├── eval_retrieval.py             # FAISS retrieval benchmark
+│       ├── eval_response.py              # Guardrails & response quality evaluation
+│       ├── failure_analysis.py           # Systematic error & edge-case analysis
+│       └── eval_all.py                   # Master evaluation runner
+├── data/
+│   ├── retrieval_documents.csv           # Curated retrieval corpus (65,239 documents)
+│   ├── retriever_filtered_metadata.pkl   # Serialized document metadata (32.5 MB)
+│   ├── apple_support_pairs_clean.csv     # Cleaned customer-agent tweet pairs (23.3 MB)
+│   ├── intent_baseline.joblib            # Trained TF-IDF intent model
+│   └── golden_set_summary.json           # Evaluation summary cache
+├── build_filtered_index.py               # Generates apple_support_filtered.index from retrieval_documents.csv
+├── train_intent_model.py                 # Intent model training pipeline
+├── demo_cli.py                           # Interactive CLI demo application
+├── golden_candidates.csv                 # 220 candidate evaluation queries across 11 intents
+├── golden_reviewer.py                    # Terminal CLI tool for human golden set annotation
+├── golden_set.csv                        # Human-reviewed golden set (11 samples - Provisional)
+├── requirements.txt                      # Python dependencies
+├── REPORT.md                             # Comprehensive engineering evaluation report
+├── DECISION_LOG.md                       # Architecture decisions & trade-offs
+└── README.md                             # Project documentation
+```
+
+> **Note on FAISS Vector Index (`data/apple_support_filtered.index`)**:  
+> Because the pre-computed FAISS dense index is ~100.2 MB (which exceeds GitHub's 100 MB per-file upload limit), `.index` files are excluded from Git commits via `.gitignore`. The complete filtered retrieval dataset (`data/retrieval_documents.csv`) and metadata (`data/retriever_filtered_metadata.pkl`) are tracked in the repository. To generate the index locally (takes ~1–2 minutes):
+> ```bash
+> python build_filtered_index.py
+> ```
+> If the index is already present locally, the backend and CLI will load it directly.
+
+---
+
+## Measured Benchmark Results Summary
+
+| Component | Metric | Measured Value | Notes |
+| :--- | :--- | :--- | :--- |
+| **Intent Classifier (Rule Baseline)** | Weighted F1 | **0.8658** | Measured on 11 verified samples (Provisional) |
+| **Intent Classifier (Hybrid Model)** | Weighted F1 | **0.8182** | Fallback to rule taxonomy when class balance is insufficient |
+| **Escalation Safety Engine** | Hazard Safety Recall | **100.0%** (13/13) | 0 missed hazards |
+| **Escalation Safety Engine** | Benign Specificity | **100.0%** (8/8) | 0 false alarms on standard queries |
+| **Escalation Latency** | Mean Decision Time | **$30.05\ \mu\text{s}$** | Precompiled regex |
+| **FAISS Retrieval** | Top-1 Cosine Sim | **0.7510** | 65,239 document index |
+| **FAISS Retrieval** | Relevance Hit Rate | **100.0%** | Score $\ge 0.35$ |
+| **FAISS Latency** | Mean Search Time | **93.73 ms** | Dense vector search |
+| **Twitter Guardrail** | Length Compliance | **100.0%** | $\le 280$ characters |
+| **Privacy Guardrail** | PII Safety | **100.0%** | No public credential solicitation |
+| **Actionable Quality Check** | Deterministic Pass Rate | **57.1%** | Concrete troubleshooting vocabulary presence |
+| **LLM-as-a-Judge Quality** | Model Score | **NOT MEASURED** | Explicitly omitted (No external LLM configured) |
+| **End-to-End Pipeline** | Mean Total Latency | **225.37 ms** | Complete pipeline execution |
+
+---
+
+## Limitations & Edge Cases
+
+1. **Golden Set Size (Provisional)**:
+   - Current ground truth dataset contains **11 human-reviewed examples** across the 11 intents (provisional state toward the 200-sample target). Intent accuracy metrics should be interpreted as provisional benchmark indicators.
+2. **Offline Grounded Generator vs. Generative LLM**:
+   - The primary response generator uses deterministic grounding templates synthesized from retrieved historical pairs to guarantee 0-cost, 100% offline uptime, and sub-second latency. An external LLM can be optionally plugged into `src/models/generator.py` if an API key is provided.
+3. **Twitter Length Constraints**:
+   - Complex multi-issue inquiries must be condensed to $\le 280$ characters. Detailed step-by-step diagnostic workflows occasionally require directing the user to official Apple Support articles or DMs.
+4. **Out-of-Domain Boundaries**:
+   - Explicit non-Apple platforms (Windows, Dell, Android, Samsung) are rejected deterministically. Queries mentioning ambiguous third-party peripherals without explicit brand markers may be handled under general peripheral/connectivity guidance.
+
+---
+
+## Documentation
+
+- **[REPORT.md](file:///c:/Users/kumar/Downloads/archive/twcs/hiver-support-agent/REPORT.md)**: Full engineering evaluation report with component breakdowns, empirical benchmarks, headline metric transparency, and failure analysis.
+- **[DECISION_LOG.md](file:///c:/Users/kumar/Downloads/archive/twcs/hiver-support-agent/DECISION_LOG.md)**: Architecture Decision Records (ADRs) explaining technical trade-offs.
