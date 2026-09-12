@@ -32,58 +32,54 @@ To preserve scientific integrity and prevent metric conflation, all empirical fi
 
 ## 1. System Architecture
 
-```
-                       Customer Tweet
-                             │
-                             ▼
-               ┌───────────────────────────┐
-               │     1. Preprocessing      │
-               └─────────────┬─────────────┘
-                             │
-                             ▼
-               ┌───────────────────────────┐
-               │ 2. Intent Classification  │  (Rule Baseline vs TF-IDF vs Hybrid)
-               └─────────────┬─────────────┘
-                             │
-               ┌─────────────┴─────────────┐
-               │ Is Out-of-Domain? (Dell/  │ ──► [OUT-OF-DOMAIN BOUNDARY RESPONSE]
-               │ Windows/Android/Samsung)  │
-               └─────────────┬─────────────┘
-                             │ Safe & In-Domain
-                             ▼
-               ┌───────────────────────────┐
-               │  3. Escalation Engine     │
-               └─────────────┬─────────────┘
-                             │
-               ┌─────────────┴─────────────┐
-               │ Is Escalated == True?     │
-               │ (Hardware Danger/Sec Risk)│
-               └─────────────┬─────────────┘
-                             │
-            ┌────────────────┴────────────────┐
-     YES    │                                 │   NO (Safe)
-            ▼                                 ▼
-┌──────────────────────────┐      ┌──────────────────────────┐
-│  Safety Action Protocol  │      │  4. FAISS Dense Retrieval│
-│  (Routing + Link)        │      │  (65,239 Filtered Pairs) │
-└───────────┬──────────────┘      └───────────┬──────────────┘
-            │                                 │
-            │                                 ▼
-            │                     ┌──────────────────────────┐
-            │                     │ 5. Grounded Generator    │
-            │                     │ (Dual-Intent Synthesizer)│
-            │                     └───────────┬──────────────┘
-            │                                 │
-            └────────────────┬────────────────┘
-                             │
-                             ▼
-               ┌───────────────────────────┐
-               │   6. Response Guardrails  │
-               │ (<=280 Chars & PII Check) │
-               └─────────────┬─────────────┘
-                             │
-                             ▼
-                    Final Tweet Response
+```mermaid
+flowchart TD
+    %% 1. Ingestion
+    Query["Customer Query / Tweet"] --> Preprocess["1. Preprocessing and Text Normalization"]
+
+    %% 2. Intent Classification
+    Preprocess --> Intent["2. Intent Classifier (Hybrid Model: Rules + TF-IDF)"]
+
+    %% 3. Domain Guard Check
+    Intent --> OODCheck{"OOD / Domain Guard: Is Non-Apple Platform?"}
+
+    %% Out-of-Domain Path
+    OODCheck -- "Yes: Non-Apple (Windows, Android, Dell, etc.)" --> OODResp["Out-of-Domain Boundary Response (Polite Redirection)"]
+
+    %% In-Domain Path to Safety Check
+    OODCheck -- "No: Apple Platform" --> SafetyCheck{"3. Safety and Escalation Decision"}
+
+    %% Escalation Path (Direct to Safe Escalation Response, Bypasses Retrieval)
+    SafetyCheck -- "Yes: Hazard / Breach / Fraud" --> EscResp["Safe Escalation Response (Urgent Disconnect and Specialist Routing)"]
+
+    %% Safe Path to Retrieval
+    SafetyCheck -- "No: Safe Technical Inquiry" --> FAISS["4. FAISS Dense Vector Retrieval (65,239 Curated Pairs via all-MiniLM-L6-v2)"]
+
+    %% Grounded Deterministic Generation
+    FAISS --> Generator["5. Grounded Deterministic Response Generator (Dual-Intent Synthesis)"]
+
+    %% Guardrails Convergence
+    OODResp --> Guardrails["6. Response Guardrails (Twitter <= 280 chars, PII Protection, Actionability)"]
+    EscResp --> Guardrails
+    Generator --> Guardrails
+
+    %% Final Output
+    Guardrails --> FinalReply["Final Grounded Customer Reply"]
+
+    %% Styling
+    classDef startEnd fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#0d47a1;
+    classDef process fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#4a148c;
+    classDef decision fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,color:#e65100;
+    classDef hazard fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#b71c1c;
+    classDef retrieval fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#1b5e20;
+    classDef guard fill:#e0f2f1,stroke:#00695c,stroke-width:2px,color:#004d40;
+
+    class Query,FinalReply startEnd;
+    class Preprocess,Intent process;
+    class OODCheck,SafetyCheck decision;
+    class OODResp,EscResp hazard;
+    class FAISS,Generator retrieval;
+    class Guardrails guard;
 ```
 
 ---
